@@ -6,6 +6,7 @@ import { computeGrid } from '../calibration/grid';
 import { buildCalibrationRecord } from './calibrationRecord';
 import {
   addPlayer, deletePlayerData, latestCalibration, listCalibrations, listPlayers, openDb, saveCalibration,
+  updatePlayer,
 } from './db';
 
 const LIMITS = CONFIG.player;
@@ -89,6 +90,27 @@ describe('IndexedDB', () => {
     expect((await listPlayers(db)).map((p) => p.id)).toEqual(['G2', 'G10']);
     expect(await listCalibrations(db, 'G1')).toHaveLength(0);
     expect(await listCalibrations(db, 'G2')).toHaveLength(1);
+    db.close();
+  });
+
+  it('modifie un profil, y compris son pseudonyme, sans perdre ses calibrations', async () => {
+    const db = await openDb(`test-${Math.random()}`);
+    await addPlayer(db, player('G1'));
+    await addPlayer(db, player('G2'));
+    await saveCalibration(db, record('a', 'G1', '2026-11-10T10:00:00Z'));
+
+    await updatePlayer(db, 'G1', { ...player('G1'), heightCm: 181 });
+    expect((await listPlayers(db)).find((p) => p.id === 'G1')?.heightCm).toBe(181);
+
+    await updatePlayer(db, 'G1', { ...player('G3'), heightCm: 181 });
+    expect((await listPlayers(db)).map((p) => p.id)).toEqual(['G2', 'G3']);
+    expect(await listCalibrations(db, 'G1')).toHaveLength(0);
+    expect((await listCalibrations(db, 'G3'))[0]?.id).toBe('a');
+
+    // Pseudonyme déjà pris : rien ne change.
+    await expect(updatePlayer(db, 'G3', player('G2'))).rejects.toThrow(/existe déjà/);
+    expect((await listPlayers(db)).map((p) => p.id)).toEqual(['G2', 'G3']);
+    expect(await listCalibrations(db, 'G3')).toHaveLength(1);
     db.close();
   });
 });

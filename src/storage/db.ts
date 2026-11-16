@@ -54,6 +54,26 @@ export async function latestCalibration(db: Db, playerId: string): Promise<Calib
   return (await listCalibrations(db, playerId))[0];
 }
 
+/**
+ * Modifie un profil. Si le pseudonyme change, ses calibrations sont rattachées au nouveau
+ * pseudonyme dans la même transaction (tout ou rien). Les calibrations passées gardent
+ * l'échelle px/cm calculée avec la taille connue au moment de la calibration.
+ */
+export async function updatePlayer(db: Db, previousId: string, player: Player): Promise<void> {
+  const tx = db.transaction(['players', 'calibrations'], 'readwrite');
+  const players = tx.objectStore('players');
+  if (!(await players.get(previousId))) throw new Error(`Profil ${previousId} introuvable.`);
+  if (player.id !== previousId) {
+    if (await players.get(player.id)) throw new Error(`Le pseudonyme ${player.id} existe déjà.`);
+    const cals = tx.objectStore('calibrations');
+    const linked = await cals.index('by_player').getAll(previousId);
+    for (const c of linked) await cals.put({ ...c, playerId: player.id });
+    await players.delete(previousId);
+  }
+  await players.put(player);
+  await tx.done;
+}
+
 /** Supprime une joueuse et toutes ses données (section 11). */
 export async function deletePlayerData(db: Db, playerId: string): Promise<void> {
   const tx = db.transaction(['players', 'calibrations'], 'readwrite');

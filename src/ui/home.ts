@@ -4,6 +4,7 @@ import { CATEGORY_LABELS, type Player } from '../players/player';
 export interface HomeActions {
   onSelectPlayer: (id: string) => void;
   onNewPlayer: () => void;
+  onEditPlayer: (id: string) => void;
   onDiagnostic: () => void;
 }
 
@@ -37,18 +38,28 @@ export function renderHome(root: HTMLElement, players: readonly Player[], a: Hom
     list.append(p);
   }
   for (const player of players) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'player-card';
+    const card = document.createElement('div');
+    card.className = 'player-card';
+    const main = document.createElement('button');
+    main.type = 'button';
+    main.className = 'player-card__main';
+    main.setAttribute('aria-label', `Calibrer ${player.id}`);
     const id = document.createElement('span');
     id.className = 'player-card__id';
     id.textContent = player.id;
     const info = document.createElement('span');
     info.className = 'player-card__info';
     info.textContent = `${CATEGORY_LABELS[player.category]} · ${player.heightCm} cm`;
-    b.append(id, info);
-    b.addEventListener('click', () => a.onSelectPlayer(player.id));
-    list.append(b);
+    main.append(id, info);
+    main.addEventListener('click', () => a.onSelectPlayer(player.id));
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'player-card__edit';
+    edit.textContent = 'Modifier';
+    edit.setAttribute('aria-label', `Modifier le profil ${player.id}`);
+    edit.addEventListener('click', () => a.onEditPlayer(player.id));
+    card.append(main, edit);
+    list.append(card);
   }
   root.querySelector('[data-action="new"]')!.addEventListener('click', a.onNewPlayer);
   root.querySelector('[data-action="diag"]')!.addEventListener('click', a.onDiagnostic);

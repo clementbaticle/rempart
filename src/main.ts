@@ -6,7 +6,7 @@ import { renderLiveView } from './ui/liveView';
 import { renderPlayerForm } from './ui/playerForm';
 import { renderCalibration } from './ui/calibrationView';
 import {
-  addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, type Db,
+  addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, updatePlayer, type Db,
 } from './storage/db';
 
 applyTheme();
@@ -29,16 +29,30 @@ async function showHome(db: Db): Promise<void> {
     renderHome(root, players, {
       onSelectPlayer: (id) => void showCalibration(db, id),
       onNewPlayer: () => go(() =>
-        renderPlayerForm(
-          root,
-          players.map((p) => p.id),
-          async (input) => {
+        renderPlayerForm(root, {
+          existingIds: players.map((p) => p.id),
+          onSubmit: async (input) => {
             await addPlayer(db, { ...input, active: true, createdAt: new Date().toISOString() });
             await showHome(db);
           },
-          () => void showHome(db),
-        ),
+          onCancel: () => void showHome(db),
+        }),
       ),
+      onEditPlayer: (id) => {
+        const initial = players.find((p) => p.id === id);
+        if (!initial) return;
+        go(() =>
+          renderPlayerForm(root, {
+            existingIds: players.map((p) => p.id),
+            initial,
+            onSubmit: async (input) => {
+              await updatePlayer(db, initial.id, { ...initial, ...input });
+              await showHome(db);
+            },
+            onCancel: () => void showHome(db),
+          }),
+        );
+      },
       onDiagnostic: () => go(() => renderLiveView(root, () => void showHome(db))),
     }),
   );
