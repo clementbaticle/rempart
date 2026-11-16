@@ -25,6 +25,11 @@ export class SkeletonOverlay {
     this.rect = videoRect;
   }
 
+  /** Contexte 2D (pixels CSS) pour les dessins supplémentaires. */
+  get context(): CanvasRenderingContext2D {
+    return this.ctx;
+  }
+
   clear(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }

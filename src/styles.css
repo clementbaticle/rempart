@@ -200,3 +200,299 @@ body {
   font: inherit;
   padding: 0.3rem;
 }
+
+/* ---------- Accueil : liste des joueuses ---------- */
+.home {
+  overflow-y: auto;
+  justify-content: flex-start;
+}
+
+.home__header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: left;
+}
+
+.home__header .home__logo {
+  height: min(20vh, 160px);
+}
+
+.home__players {
+  width: min(900px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.home__section-title {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--brand-blue);
+}
+
+.home__list {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.8rem;
+}
+
+.home__empty {
+  grid-column: 1 / -1;
+  color: var(--brand-text-muted);
+}
+
+.player-card {
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  padding: 1rem 1.2rem;
+  border: 2px solid var(--brand-blue);
+  border-radius: 14px;
+  background: var(--brand-surface);
+  color: var(--brand-text);
+  cursor: pointer;
+}
+
+.player-card:active {
+  border-color: var(--brand-yellow);
+}
+
+.player-card__id {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.player-card__info {
+  color: var(--brand-text-muted);
+}
+
+.home__footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.home__version {
+  color: var(--brand-text-muted);
+  font-size: 0.9rem;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--brand-text);
+  border: 2px solid var(--brand-text-muted);
+  font-size: 1.1rem;
+}
+
+/* ---------- Formulaire de profil ---------- */
+.form {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+.form__title {
+  margin: 0;
+  color: var(--brand-yellow);
+}
+
+.form__note {
+  margin: 0;
+  color: var(--brand-text-muted);
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+
+.form input,
+.form select {
+  font: inherit;
+  font-size: 1.2rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 2px solid var(--brand-blue);
+  background: var(--brand-surface);
+  color: var(--brand-text);
+}
+
+.form__errors {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--brand-yellow);
+}
+
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* ---------- Bouton retour (écrans d'exercice) ---------- */
+.live__back {
+  position: absolute;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  left: max(1rem, env(safe-area-inset-left));
+  font: inherit;
+  font-size: 1.1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: 2px solid var(--ex-text-muted);
+  background: var(--ex-panel);
+  color: var(--ex-text);
+}
+
+/* ---------- Calibration (neutre, lisible à 3 m) ---------- */
+.calib__hud {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(760px, 70%);
+  padding: 0.8rem 1.4rem 1rem;
+  border-radius: 16px;
+  background: var(--ex-panel);
+  text-align: center;
+}
+
+.calib__player {
+  position: absolute;
+  top: 0.6rem;
+  left: 1rem;
+  font-weight: 800;
+  color: var(--ex-text-muted);
+}
+
+.calib__steps {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 0 0 0.4rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--ex-text-muted);
+}
+
+.calib__steps li.is-done {
+  color: var(--ex-ok);
+}
+
+.calib__steps li.is-current {
+  color: var(--ex-text);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.calib__instruction {
+  font-size: clamp(1.6rem, 3.6vw, 2.6rem);
+  font-weight: 800;
+}
+
+.calib__feedback {
+  min-height: 1.6em;
+  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+  font-weight: 600;
+}
+
+.calib__feedback.is-ok {
+  color: var(--ex-ok);
+}
+
+.calib__feedback.is-error {
+  color: var(--ex-error);
+}
+
+.calib__progress {
+  margin-top: 0.5rem;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--ex-progress-track);
+  overflow: hidden;
+}
+
+.calib__progress-bar {
+  height: 100%;
+  width: 0;
+  background: var(--ex-ok);
+}
+
+.calib__summary {
+  position: absolute;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  width: min(420px, 40%);
+  padding: 1rem 1.2rem;
+  border-radius: 16px;
+  background: var(--ex-panel);
+}
+
+.calib__summary[hidden] {
+  display: none;
+}
+
+.calib__summary h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: var(--ex-text-muted);
+}
+
+.calib__summary dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+}
+
+.calib__summary dt {
+  color: var(--ex-text-muted);
+}
+
+.calib__summary dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.calib__alerts {
+  margin: 0.8rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--ex-warning);
+}
+
+.calib__alerts:empty {
+  display: none;
+}
+
+.calib__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.calib__actions .btn {
+  font-size: 1.1rem;
+  padding: 0.7em 1.4em;
+}
+
+.btn--light {
+  background: var(--ex-text);
+  color: var(--ex-bg);
+}
+
+.calib__actions .btn--ghost {
+  color: var(--ex-text);
+  border-color: var(--ex-text-muted);
+}

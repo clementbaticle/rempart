@@ -27,6 +27,8 @@ export const EXERCISE = {
   text: '#E6E8EB',
   textMuted: '#8B949E',
   skeleton: '#C9D1D9',
+  gridLine: 'rgba(201, 209, 217, 0.45)',
+  progressTrack: 'rgba(230, 232, 235, 0.2)',
   landmark: '#FFFFFF',
   ok: '#3FB950',
   warning: '#D29922',
@@ -62,6 +64,7 @@ export function applyTheme(root: HTMLElement = document.documentElement): void {
     '--ex-ok': EXERCISE.ok,
     '--ex-warning': EXERCISE.warning,
     '--ex-error': EXERCISE.error,
+    '--ex-progress-track': EXERCISE.progressTrack,
   };
   for (const [name, value] of Object.entries(vars)) root.style.setProperty(name, value);
 }
