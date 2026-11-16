@@ -9,7 +9,7 @@ Double finalité : **outil utile aux joueuses** et **instrument de mesure** pour
 
 - Utilisatrices : 5 gardiennes (2 pro, 1 centre de formation, 1-2 réserve), puis joueuses de champ (groupe de comparaison).
 - Usage : séances de 15 min, 2 fois par semaine, quand la joueuse est « off » ; tablette sur trépied face à la gardienne, à 2-3 m, au gymnase.
-- Principe : la gardienne se voit à l'écran (effet miroir) dans une **cage virtuelle de 9 zones** ; des cibles apparaissent ; elle les « touche » avec la main ou le pied, détectés par la caméra.
+- Principe : la gardienne se voit à l'écran (effet miroir) dans une **cage virtuelle de 12 zones** (4 colonnes × 3 rangées, aucune sur le corps de la joueuse) ; des cibles apparaissent ; elle les « touche » avec la main ou le pied, détectés par la caméra.
 - Exigence scientifique : chaque essai est horodaté et enregistré en données brutes ; un **mode Test** rejoue toujours exactement la même séquence.
 
 ## 2. Contraintes matérielles et techniques
@@ -49,7 +49,7 @@ PoseLandmarker (33 points). Effecteurs :
 3. **Envergure** (2 s, bras écartés à l'horizontale).
 4. **Bras levés** (2 s) : portée haute.
 5. **Pas à gauche** puis **pas à droite** (2 s chacun, bras écartés) : portée latérale maximale de chaque côté (main la plus éloignée par rapport au centre du bassin en garde) et longueur du pas.
-6. Calcul de la **grille 3 × 3** proportionnée à la joueuse, symétrique et centrée sur le bassin : colonnes latérales à une fraction (90 % par défaut) de la portée latérale moyenne des deux côtés ; rangée haute à la même fraction de la portée bras levés ; rangée basse au niveau des chevilles ; rangée du milieu à mi-hauteur. Cibles de diamètre proportionnel à la taille apparente. Alerte si une cible sort de l'image. Les portées gauche et droite sont enregistrées séparément (asymétrie).
+6. Calcul de la **grille de 12 zones (4 colonnes × 3 rangées)** proportionnée à la joueuse, symétrique et centrée sur le bassin, **sans colonne centrale** (une cible sur le corps se toucherait sans bouger) : deux colonnes de chaque côté, la proche à 50 % et la lointaine à 90 % (paramétrables) de la portée latérale moyenne des deux côtés ; zones numérotées de 1 à 12, de gauche à droite puis de haut en bas (vue miroir) ; rangée haute à la même fraction de la portée bras levés ; rangée basse au niveau des chevilles ; rangée du milieu à mi-hauteur. Cibles de diamètre proportionnel à la taille apparente. Alerte si une cible sort de l'image. Les portées gauche et droite sont enregistrées séparément (asymétrie).
 7. **Échelle** : taille apparente rapportée à la taille réelle (pixels par cm, approximation : le repère haut est le visage, pas le sommet du crâne) ; permet d'exprimer les mesures en cm.
 8. Sauvegarde de la calibration (horodatée) et rappel de la précédente pour vérifier une distance comparable (écart de taille apparente > 10 % → alerte « trépied pas à la même distance »).
 
@@ -67,7 +67,7 @@ La garde d'une gardienne n'est pas statique (petits rebonds, mains qui bougent) 
      - main : déplacement **par rapport au centre des épaules** (un rebond du corps entier ne compte pas) ;
      - bassin : déplacement **horizontal** (pas, plongeon) ;
      - pied : déplacement **horizontal** d'une cheville.
-   - **Touche** : première image où un effecteur (poignet ou index ; cheville ou pointe de pied) entre dans le cercle d'une cible → *temps total* ; *temps de mouvement* = total − TR. La **première** zone touchée fait foi. Une touche sans initiation détectée auparavant fixe l'initiation à la même image.
+   - **Touche** : première image où un effecteur (poignet ou index ; cheville ou pointe de pied) **entre** dans le cercle d'une cible : un effecteur déjà dans un cercle au moment de l'apparition ne compte pour ce cercle qu'après en être sorti puis y être revenu → *temps total* ; *temps de mouvement* = total − TR. La **première** zone touchée fait foi. Une touche sans initiation détectée auparavant fixe l'initiation à la même image.
    - **Trajectoires** : positions des mains, pieds, épaules et bassin enregistrées image par image (coordonnées seulement, aucune image), de l'avant-période à la fin de la réponse, pour pouvoir recalculer les TR avec un autre seuil. **Indice de balancement** par essai : amplitude moyenne des mouvements des mains (par rapport aux épaules) pendant l'avant-période, en proportion de la taille apparente.
 5. **Issue** de l'essai : `hit` (bonne cible, bon effecteur), `wrong_effector`, `wrong_zone`, `miss` (délai dépassé), `commission` (mouvement sur un no-go), `correct_rejection` (no-go respecté), `anticipation` (initiation < 150 ms après le stimulus).
 6. **Retour** à la joueuse : visuel bref (flash vert / rouge) et son facultatif, **après** la réponse uniquement.
@@ -79,7 +79,7 @@ Délais par défaut (paramétrables) : réponse 2 000 ms ; fenêtre no-go 1 500 
 
 | Mode | Règle | Processus visé |
 | --- | --- | --- |
-| **Classique** | Une cible verte dans une des 9 zones ; toucher avec n'importe quel effecteur (rangée basse : pied ou main) | Temps de réaction de choix |
+| **Classique** | Une cible verte dans une des 12 zones ; toucher avec n'importe quel effecteur (rangée basse : pied ou main) | Temps de réaction de choix |
 | **Go / no-go** | Vert = toucher ; rouge = ne pas bouger. Proportion 70 % go / 30 % no-go | Inhibition (anti-feinte) |
 | **Bon segment** | Couleur + symbole de la cible = effecteur imposé : orange « G » = main gauche, magenta « D » = main droite, blanc + icône de pied = pied (côté de la cible) — voir section 10 | Choix de réponse, coordination |
 
@@ -91,9 +91,9 @@ Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), doub
 - Générateur pseudo-aléatoire à graine (ex. mulberry32) ; **graine et version de la batterie enregistrées** ; même séquence à chaque passage.
 - Batterie v1 (≈ 7-8 min) :
   - Familiarisation : 6 essais classiques (non analysés).
-  - Bloc 1 Classique : 36 essais (9 zones × 4, ordre contrebalancé, pas plus de 2 fois la même zone de suite).
+  - Bloc 1 Classique : 36 essais (12 zones × 3, ordre contrebalancé, pas plus de 2 fois la même zone de suite).
   - Bloc 2 Go / no-go : 40 essais (28 go, 12 no-go).
-  - Bloc 3 Bon segment : 36 essais.
+  - Bloc 3 Bon segment : 36 essais (12 zones × 3).
   - Pause de 30 s entre les blocs.
 - Aucun ajustement de difficulté ; pas de classement affiché pendant le test.
 
@@ -107,7 +107,7 @@ Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), doub
 - `players` : id pseudonyme (G1…G5, C1…), poste, catégorie (pro / CF / réserve / champ), latéralité, taille réelle (cm), actif.
 - `sessions` : id, player_id, date-heure, mode (test / train), version de batterie, graine, appareil (user agent, dimensions vidéo), i/s moyen, % images perdues, source de l'horodatage, calibration_id, notes.
 - `calibrations` : id, player_id, date, dimensions vidéo, mesures (taille apparente, épaules, bassin, chevilles, envergure, portée haute, portées et pas gauche / droite, échelle px/cm), grille calculée, contexte (version de l'app, délégué, position de caméra).
-- `trials` : session_id, bloc, n° d'essai, mode, zone (1-9), stimulus (couleur / type), go ou no-go, effecteur attendu, effecteur utilisé, zone touchée, avant-période (ms), t_stimulus (et horodatage du rafraîchissement), t_initiation, critère d'initiation, t_touche, TR (ms), temps de mouvement (ms), temps total (ms), issue, nombre de faux départs, niveau de difficulté, qualité (visibilité moyenne, images perdues pendant l'essai, indice de balancement), trajectoires.
+- `trials` : session_id, bloc, n° d'essai, mode, zone (1-12), stimulus (couleur / type), go ou no-go, effecteur attendu, effecteur utilisé, zone touchée, avant-période (ms), t_stimulus (et horodatage du rafraîchissement), t_initiation, critère d'initiation, t_touche, TR (ms), temps de mouvement (ms), temps total (ms), issue, nombre de faux départs, niveau de difficulté, qualité (visibilité moyenne, images perdues pendant l'essai, indice de balancement), trajectoires.
 - Les `sessions` portent aussi : statut (terminée / interrompue), délégué, résolution, position de caméra, version de l'app.
 
 Export CSV : un fichier `trials` en format long avec les colonnes de session répétées (prêt pour R / Python), plus un résumé par séance (TR médian, écart interquartile, % réussite, % commissions, % anticipations).
@@ -149,7 +149,7 @@ Export CSV : un fichier `trials` en format long avec les colonnes de session ré
 ## 12. Étapes de développement (chacune validée avant la suivante)
 
 1. **Socle** : projet Vite + TS + PWA, caméra en miroir, squelette MediaPipe dessiné par-dessus, compteur d'i/s. Déploiement GitHub Pages. → *Test sur l'iPad.*
-2. **Profils, calibration et grille** : profils joueuses (pseudonyme + taille), cadrage, posture, envergure, bras levés, pas gauche / droit, grille 3 × 3 affichée ; tables IndexedDB `players` et `calibrations`.
+2. **Profils, calibration et grille** : profils joueuses (pseudonyme + taille), cadrage, posture, envergure, bras levés, pas gauche / droit, grille de 12 zones affichée ; tables IndexedDB `players` et `calibrations`.
 3. **Mode Classique** : boucle d'essai complète (position de départ, avant-période, horodatages, issues), tables IndexedDB `sessions` et `trials`.
 4. **Go / no-go et Bon segment**, mode Test à graine, écran de résultats, export CSV / JSON.
 5. **Habillage** (couleurs TMVH, sons, profils), mode Entraînement adaptatif. → *Test au gymnase et étude de fiabilité.*
