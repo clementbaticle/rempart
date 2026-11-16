@@ -16,7 +16,7 @@ Double finalité : **outil utile aux joueuses** et **instrument de mesure** pour
 
 | Élément | Choix |
 | --- | --- |
-| Appareil | iPad (Safari / app installée sur l'écran d'accueil), orientation paysage, trépied. Modèle exact : *à compléter* |
+| Appareil | iPad (Safari / app installée sur l'écran d'accueil), orientation paysage, trépied. Modèle : **iPad 9e génération (2021), 10,2 pouces, Wi-Fi, 64 Go** (puce A13 Bionic ; caméra frontale ultra grand-angle 12 Mpx avec Cadre centré, située sur le **bord court** en paysage) |
 | Socle | Vite + TypeScript, sans framework UI lourd |
 | PWA | `vite-plugin-pwa` : installable, hors ligne (modèle MediaPipe mis en cache) |
 | Caméra | `getUserMedia({ video: { facingMode: "user", width: 1280, height: 720 } })` ; nécessite HTTPS |
@@ -30,6 +30,7 @@ Double finalité : **outil utile aux joueuses** et **instrument de mesure** pour
 Point à vérifier dès l'étape 1 : position de la caméra frontale selon le modèle d'iPad (bord long ou bord court en paysage) et fréquence d'images réelle de la détection (objectif ≥ 25 i/s).
 
 - L'app doit fonctionner **quelle que soit la position de la caméra frontale** (bord long ou bord court en paysage) : aucune hypothèse codée en dur sur l'orientation du flux vidéo.
+- **Cadre centré (Center Stage) à désactiver** pendant l'utilisation (Centre de contrôle → Effets vidéo, caméra active) : ce recadrage automatique change la taille apparente de la joueuse et fausserait la calibration et la comparaison entre séances. À vérifier lors du test de l'étape 1.
 - Un **panneau de diagnostic** affiche à l'écran : résolution vidéo réelle, i/s de la vidéo et de la détection, position de caméra détectée (bord long / bord court / inconnue).
 
 ## 3. Repères du corps utilisés
