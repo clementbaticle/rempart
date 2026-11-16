@@ -37,4 +37,9 @@ Horodatage : `captureTime` dans tous les cas.
   pas gauche / droit 83 / 93.
 - Cohérence interne : demi-envergure + pas ≈ portée latérale (85 + 83 = 168 vs 174 ; 85 + 93 = 178 vs 184).
 - Zones jugées atteignables. Alerte de distance déclenchée correctement.
-- Envergure non vérifiée au mètre.
+- Envergure non vérifiée au mètre. Taille déclarée au profil : 183 cm.
+- 2e essai : ordinateur reculé. Maintien immobile de 2 s jugé facile.
+- Écart attendu sur les valeurs en cm : envergure mesurée 170 pour 183 cm de taille. Les points de main
+  de PoseLandmarker (19/20) sont proches des phalanges, pas du bout des doigts (≈ 2 × 10 cm en moins),
+  et l'échelle repose sur l'approximation visage → chevilles = 0,9 × taille. Les valeurs en cm servent
+  à comparer une joueuse à elle-même, pas à une mesure anthropométrique.
