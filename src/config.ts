@@ -55,6 +55,13 @@ export const CONFIG = {
     holdMs: 2000,
     /** Durée pendant laquelle le cadrage doit rester correct avant de passer à la garde (ms). */
     framingOkMs: 1000,
+    /** Temps laissé pour se mettre en garde avant la mesure (ms), sans rien enregistrer. */
+    guardPrepareMs: 2000,
+    /**
+     * Garde valide : les deux mains au-dessus de ce point du buste
+     * (0 = niveau des épaules, 1 = niveau du bassin).
+     */
+    guardMaxHandLevel: 0.5,
     /**
      * Tolérance d'immobilité : écart maximal de chaque repère à sa position moyenne,
      * en proportion de la taille apparente (indépendant de la distance).
@@ -113,6 +120,10 @@ export const CONFIG = {
     baselineMs: 300,
     /** Référence glissante pour détecter un faux départ pendant l'avant-période (ms). */
     falseStartWindowMs: 500,
+    /** Seuil de faux départ (proportion de la taille apparente), plus large que le seuil d'initiation. */
+    falseStartThresholdRatio: 0.08,
+    /** Nombre d'images consécutives au-delà du seuil pour un faux départ. */
+    falseStartFrames: 2,
     /** Seuil d'initiation (proportion de la taille apparente). */
     initiationThresholdRatio: 0.05,
     /** Délai de réponse (ms). */

@@ -189,6 +189,8 @@ describe('automate d’essai', () => {
     for (let i = 0; i < 20; i++) d.frame(makePose()); // garde puis début d'avant-période
     expect(d.m.phase).toBe('foreperiod');
     d.frame(moveLeftHand(makePose(), -60, 0));
+    expect(d.m.phase).toBe('foreperiod'); // une seule image ne suffit pas
+    d.frame(moveLeftHand(makePose(), -60, 0));
     expect(d.m.phase).toBe('waitGuard');
     expect(d.events.some((e) => e.type === 'falseStart')).toBe(true);
     d.untilStimulus();
@@ -262,5 +264,25 @@ describe('automate d’essai', () => {
     const b = run([makePose(), makePose(), makePose(), makePose(), moveLeftHand(makePose(), -100, -100), makePose()]);
     expect(b.records[0]!.outcome).toBe('wrong_zone');
     expect(b.records[0]!.touchedZone).toBe(6);
+  });
+
+  it('petits mouvements et sauts isolés pendant l’attente : pas de faux départ', () => {
+    const d = new Driver([1], 1400);
+    for (let i = 0; i < 12; i++) d.frame(makePose()); // garde puis début d'avant-période
+    expect(d.m.phase).toBe('foreperiod');
+    d.frame(moveLeftHand(makePose(), -25, 0)); // 25 px < 8 % de 400 = 32 px
+    d.frame(moveLeftHand(makePose(), -28, 5));
+    d.frame(moveLeftHand(makePose(), -50, 0)); // saut isolé d'une image
+    d.frame(makePose());
+    expect(d.m.phase).toBe('foreperiod');
+    expect(d.events.some((e) => e.type === 'falseStart')).toBe(false);
+  });
+
+  it('le retour en garde juste avant l’avant-période ne déclenche pas de faux départ', () => {
+    const d = new Driver([1], 1400);
+    // Mains qui reviennent en garde (hors zone puis dedans), comme après l'essai précédent.
+    for (let i = 5; i >= 0; i--) d.frame(moveLeftHand(makePose(), -15 * i, -15 * i));
+    for (let i = 0; i < 10; i++) d.frame(makePose());
+    expect(d.events.some((e) => e.type === 'falseStart')).toBe(false);
   });
 });

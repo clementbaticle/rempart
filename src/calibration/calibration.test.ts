@@ -3,7 +3,7 @@ import { CONFIG } from '../config';
 import { apparentHeight, flatten, toImagePoints, unflatten, POSTURE_POINTS } from './geometry';
 import { checkFraming } from './framing';
 import { StableHold } from './stability';
-import { apparentSizeChange, measureGuard, pixelsPerCm } from './measures';
+import { apparentSizeChange, isGuardPosture, measureGuard, pixelsPerCm } from './measures';
 import { checkGoal, goalGeometry, orderCorners } from './goal';
 import { colOf, computeGrid, rowOf } from './grid';
 import { CalibrationWizard } from './wizard';
@@ -81,6 +81,14 @@ describe('StableHold', () => {
 });
 
 describe('mesures de garde', () => {
+  it('posture de garde : mains au-dessus du milieu du buste', () => {
+    // Épaules à 320, bassin à 450 → limite à 385.
+    expect(isGuardPosture(makePose({ arms: 'high' }), 0.5)).toBe(true);
+    expect(isGuardPosture(makePose({ arms: 'down' }), 0.5)).toBe(false);
+    expect(isGuardPosture(makePose(), 0.5)).toBe(false); // mains à 410 (poitrine basse)
+    expect(isGuardPosture(makePose(), 0.8)).toBe(true);
+  });
+
   it('garde : taille, épaules, bassin, mains, chevilles', () => {
     expect(measureGuard(makePose())).toEqual({
       heightPx: 400, faceTopY: 250, ankleY: 650, shoulderWidthPx: 100, pelvis: { x: 640, y: 450 },
@@ -156,13 +164,30 @@ describe('CalibrationWizard', () => {
     return t;
   }
 
-  it('cadrage puis garde immobile → mesures de garde', () => {
+  it('cadrage → préparation 2 s → garde immobile → mesures de garde', () => {
+    const w = new CalibrationWizard(C);
+    let t = run(w, 0, makePose({ arms: 'down' }), 1100);
+    expect(w.step).toBe('prepare');
+    // Pendant la préparation, rien n'est mesuré, même bras le long du corps.
+    const s = w.update(t, makePose({ arms: 'down' }), W, H);
+    expect(s.feedback).toMatch(/Mesure dans 2 s/);
+    t = run(w, t, makePose({ arms: 'down' }), 2100);
+    expect(w.step).toBe('guard');
+    t = run(w, t, makePose({ arms: 'high' }), 2100);
+    expect(w.step).toBe('done');
+    expect(w.result?.guard.leftHand).toEqual({ x: 559, y: 292.5 });
+  });
+
+  it('bras le long du corps : garde refusée', () => {
     const w = new CalibrationWizard(C);
     let t = run(w, 0, makePose(), 1100);
-    expect(w.step).toBe('guard');
     t = run(w, t, makePose(), 2100);
-    expect(w.step).toBe('done');
-    expect(w.result?.guard.heightPx).toBe(400);
+    expect(w.step).toBe('guard');
+    const s = w.update(t, makePose({ arms: 'down' }), W, H);
+    expect(s.valid).toBe(false);
+    expect(s.feedback).toMatch(/Levez les mains/);
+    run(w, t, makePose({ arms: 'down' }), 3000);
+    expect(w.step).toBe('guard');
   });
 
   it('cadrage incorrect : consigne et pas d’avancée', () => {
@@ -177,8 +202,9 @@ describe('CalibrationWizard', () => {
   it('un mouvement pendant la garde remet le chronomètre à zéro', () => {
     const w = new CalibrationWizard(C);
     let t = run(w, 0, makePose(), 1100);
-    t = run(w, t, makePose(), 1500);
-    const s = w.update(t, makePose({ jitter: 40 }), W, H); // 40 px > 4 % de 400
+    t = run(w, t, makePose(), 2100); // préparation
+    t = run(w, t, makePose({ arms: 'high' }), 1500);
+    const s = w.update(t, makePose({ arms: 'high', jitter: 40 }), W, H); // 40 px > 4 % de 400
     expect(s.progress).toBe(0);
     expect(w.step).toBe('guard');
   });

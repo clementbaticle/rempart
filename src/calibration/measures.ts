@@ -52,6 +52,19 @@ export function measureGuard(p: Points): GuardMeasures | null {
   };
 }
 
+/**
+ * Garde valide : les deux mains au-dessus d'un niveau du buste
+ * (`maxLevel` : 0 = épaules, 1 = bassin). Bras le long du corps → false.
+ */
+export function isGuardPosture(p: Points, maxLevel: number): boolean {
+  const ls = p[L_SHOULDER], rs = p[R_SHOULDER], lh = p[L_HIP], rh = p[R_HIP];
+  const l = handPoint(p, 'left'), r = handPoint(p, 'right');
+  if (!ls || !rs || !lh || !rh || !l || !r) return false;
+  const shoulderY = (ls.y + rs.y) / 2;
+  const limit = shoulderY + maxLevel * ((lh.y + rh.y) / 2 - shoulderY);
+  return l.y < limit && r.y < limit;
+}
+
 /** Échelle px/cm à partir de la taille réelle (approximation visage → chevilles). */
 export function pixelsPerCm(heightPx: number, statureCm: number, faceToAnkleOverStature: number): number {
   return heightPx / (statureCm * faceToAnkleOverStature);

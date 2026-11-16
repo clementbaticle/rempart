@@ -22,6 +22,8 @@ export interface TrialParams {
   foreperiodMaxMs: number;
   baselineMs: number;
   falseStartWindowMs: number;
+  falseStartThresholdRatio: number;
+  falseStartFrames: number;
   initiationThresholdRatio: number;
   responseMs: number;
   anticipationMs: number;
@@ -111,7 +113,10 @@ export class TrialMachine {
   readonly records: TrialRecord[] = [];
 
   private readonly thresholdPx: number;
+  private readonly falseStartPx: number;
   private readonly guardRadiusPx: number;
+  /** Images consécutives au-delà du seuil de faux départ. */
+  private falseStartStreak = 0;
   /** Échantillons récents (toutes phases) pour les références de position. */
   private recent: Timed[] = [];
   private guardSince: number | null = null;
@@ -150,6 +155,7 @@ export class TrialMachine {
     private readonly emit: (e: MachineEvent) => void = () => {},
   ) {
     this.thresholdPx = p.initiationThresholdRatio * guard.heightPx;
+    this.falseStartPx = p.falseStartThresholdRatio * guard.heightPx;
     this.guardRadiusPx = p.guardRadiusRatio * guard.heightPx;
     if (plan.length === 0) this.phase = 'done';
   }
@@ -281,10 +287,19 @@ export class TrialMachine {
     while (this.recent.length && this.recent[0]!.t < t - keep) this.recent.shift();
   }
 
+  /**
+   * Faux départ : écart à la référence glissante au-delà du seuil (plus large que celui d'initiation)
+   * sur `falseStartFrames` images consécutives. La référence ne contient que des images de
+   * l'avant-période en cours (pas le retour en garde qui la précède).
+   */
   private isFalseStart(t: number, f: Features): boolean {
-    const win = this.recent.filter((s) => s.t >= t - this.p.falseStartWindowMs && s.t < t);
-    if (win.length < 3) return false;
-    return movementCause(f, meanFeatures(win.map((s) => s.f)), this.thresholdPx) !== null;
+    const from = Math.max(t - this.p.falseStartWindowMs, this.foreperiodStart);
+    const win = this.recent.filter((s) => s.t >= from && s.t < t);
+    const moved = win.length >= 3 && movementCause(f, meanFeatures(win.map((s) => s.f)), this.falseStartPx) !== null;
+    this.falseStartStreak = moved ? this.falseStartStreak + 1 : 0;
+    if (this.falseStartStreak < this.p.falseStartFrames) return false;
+    this.falseStartStreak = 0;
+    return true;
   }
 
   private startForeperiod(t: number): void {
@@ -296,6 +311,7 @@ export class TrialMachine {
         : Math.round(uniform(this.replayRng, this.p.foreperiodMinMs, this.p.foreperiodMaxMs));
     this.foreperiodSamples = [];
     this.trajectory = [];
+    this.falseStartStreak = 0;
     this.phase = 'foreperiod';
   }
 

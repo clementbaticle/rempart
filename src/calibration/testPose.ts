@@ -4,7 +4,8 @@
  */
 import type { Point, Points } from './geometry';
 
-export type Arms = 'guard' | 'spread' | 'raised';
+/** guard : mains à hauteur de poitrine ; high : garde haute de gardienne ; down : bras le long du corps. */
+export type Arms = 'guard' | 'high' | 'down' | 'spread' | 'raised';
 
 export function makePose(opts: { cx?: number; arms?: Arms; jitter?: number } = {}): Points {
   const cx = opts.cx ?? 640;
@@ -28,6 +29,12 @@ export function makePose(opts: { cx?: number; arms?: Arms; jitter?: number } = {
   if (arms === 'guard') {
     set(15, cx - 60, 400); set(16, cx + 60, 400);
     set(19, cx - 62, 420); set(20, cx + 62, 420);
+  } else if (arms === 'high') {
+    set(15, cx - 80, 300); set(16, cx + 80, 300);
+    set(19, cx - 82, 285); set(20, cx + 82, 285);
+  } else if (arms === 'down') {
+    set(15, cx - 70, 470); set(16, cx + 70, 470);
+    set(19, cx - 72, 490); set(20, cx + 72, 490);
   } else if (arms === 'spread') {
     set(15, cx - 200, 322); set(16, cx + 200, 322);
     set(19, cx - 220, 322); set(20, cx + 220, 322);

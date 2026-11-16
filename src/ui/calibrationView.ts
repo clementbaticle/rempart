@@ -9,7 +9,7 @@ import { checkGoal, goalGeometry, orderCorners, type GoalCorners } from '../cali
 import type { Grid } from '../calibration/grid';
 import { apparentSizeChange } from '../calibration/measures';
 import {
-  CalibrationWizard, STEP_INSTRUCTIONS, STEP_ORDER, type WizardResult, type WizardState,
+  CalibrationWizard, STEP_INSTRUCTIONS, type WizardResult, type WizardState, type WizardStep,
 } from '../calibration/wizard';
 import type { Player } from '../players/player';
 import { buildCalibrationRecord, type CalibrationRecord } from '../storage/calibrationRecord';
@@ -182,8 +182,9 @@ export function renderCalibration(root: HTMLElement, player: Player, a: Calibrat
 
   // ---------- 2. Joueuse ----------
   const renderWizard = (s: WizardState): void => {
-    const idx = STEP_ORDER.indexOf(s.step);
-    setSteps(idx + 1);
+    // Liste affichée : Cage (0), Cadrage (1), Garde (2, préparation comprise), terminé (3).
+    const shown: Record<WizardStep, number> = { framing: 1, prepare: 2, guard: 2, done: 3 };
+    setSteps(shown[s.step]);
     setText(s.instruction, s.feedback ?? (s.valid ? 'Bien — ne bougez plus' : ''), s.valid, s.progress);
   };
 
