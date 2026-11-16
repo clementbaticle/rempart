@@ -87,11 +87,9 @@ describe('mesures', () => {
 
   it('garde', () => {
     expect(guard).toEqual({
-      heightPx: 400,
-      faceTopY: 250,
-      ankleY: 650,
-      shoulderWidthPx: 100,
-      pelvis: { x: 640, y: 450 },
+      heightPx: 400, faceTopY: 250, ankleY: 650, shoulderWidthPx: 100, pelvis: { x: 640, y: 450 },
+      shoulderCenter: { x: 640, y: 320 }, leftHand: { x: 579, y: 410 }, rightHand: { x: 701, y: 410 },
+      leftAnkle: { x: 600, y: 650 }, rightAnkle: { x: 680, y: 650 },
     });
   });
 
@@ -172,7 +170,11 @@ describe('CalibrationWizard', () => {
     run(w, t, makePose({ cx: 760, arms: 'spread' }), 2100);
     expect(w.step).toBe('done');
     expect(w.result).toEqual({
-      guard: { heightPx: 400, faceTopY: 250, ankleY: 650, shoulderWidthPx: 100, pelvis: { x: 640, y: 450 } },
+      guard: {
+  heightPx: 400, faceTopY: 250, ankleY: 650, shoulderWidthPx: 100, pelvis: { x: 640, y: 450 },
+  shoulderCenter: { x: 640, y: 320 }, leftHand: { x: 579, y: 410 }, rightHand: { x: 701, y: 410 },
+  leftAnkle: { x: 600, y: 650 }, rightAnkle: { x: 680, y: 650 },
+},
       spanPx: 440,
       reachTopPx: 520,
       left: { reachPx: 320, stepPx: 100 },

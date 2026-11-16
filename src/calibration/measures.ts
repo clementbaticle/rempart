@@ -16,13 +16,28 @@ export interface GuardMeasures {
   ankleY: number;
   shoulderWidthPx: number;
   pelvis: Point;
+  /** Centre des épaules (référence des zones de garde). */
+  shoulderCenter: Point;
+  /** Position de garde de chaque main (milieu poignet / index). */
+  leftHand: Point;
+  rightHand: Point;
+  leftAnkle: Point;
+  rightAnkle: Point;
+}
+
+/** Point représentatif d'une main : milieu du poignet et de l'index (ou celui des deux présent). */
+export function handPoint(p: Points, side: Side): Point | null {
+  const pts = present(p, side === 'left' ? LEFT_HAND : RIGHT_HAND);
+  if (pts.length === 0) return null;
+  return { x: pts.reduce((s, q) => s + q.x, 0) / pts.length, y: pts.reduce((s, q) => s + q.y, 0) / pts.length };
 }
 
 export function measureGuard(p: Points): GuardMeasures | null {
   const h = apparentHeight(p);
   const ls = p[L_SHOULDER], rs = p[R_SHOULDER], lh = p[L_HIP], rh = p[R_HIP];
   const la = p[L_ANKLE], ra = p[R_ANKLE];
-  if (h === null || h <= 0 || !ls || !rs || !lh || !rh || !la || !ra) return null;
+  const lHand = handPoint(p, 'left'), rHand = handPoint(p, 'right');
+  if (h === null || h <= 0 || !ls || !rs || !lh || !rh || !la || !ra || !lHand || !rHand) return null;
   const ankleY = (la.y + ra.y) / 2;
   return {
     heightPx: h,
@@ -30,6 +45,11 @@ export function measureGuard(p: Points): GuardMeasures | null {
     ankleY,
     shoulderWidthPx: Math.abs(rs.x - ls.x),
     pelvis: midpoint(lh, rh),
+    shoulderCenter: midpoint(ls, rs),
+    leftHand: lHand,
+    rightHand: rHand,
+    leftAnkle: { ...la },
+    rightAnkle: { ...ra },
   };
 }
 
