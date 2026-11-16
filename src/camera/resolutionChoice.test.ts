@@ -1,0 +1,25 @@
+import { describe, expect, it } from 'vitest';
+import { resolveResolution } from './resolutionChoice';
+
+const PRESETS = {
+  '640': { width: 640, height: 480 },
+  '1280': { width: 1280, height: 720 },
+};
+const FALLBACK = { width: 1280, height: 720 };
+
+describe('resolveResolution', () => {
+  it('résolution par défaut sans paramètre', () => {
+    expect(resolveResolution('', PRESETS, FALLBACK)).toEqual({ resolution: FALLBACK, forced: false });
+  });
+
+  it('force une résolution connue, combinable avec ?delegate', () => {
+    expect(resolveResolution('?delegate=CPU&res=640', PRESETS, FALLBACK)).toEqual({
+      resolution: { width: 640, height: 480 },
+      forced: true,
+    });
+  });
+
+  it('ignore une valeur inconnue', () => {
+    expect(resolveResolution('?res=4000', PRESETS, FALLBACK).forced).toBe(false);
+  });
+});

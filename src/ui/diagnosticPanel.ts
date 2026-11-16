@@ -17,6 +17,8 @@ function powerLabel(p: PowerState | null): string {
 export interface DiagnosticData {
   videoWidth: number;
   videoHeight: number;
+  /** Résolution forcée par `?res=` (null si résolution par défaut). */
+  requestedResolution: string | null;
   /** Réglage de fréquence annoncé par la piste (peut être absent). */
   trackFrameRate: number | null;
   /** i/s fournies par la caméra (null si non mesurable : pas de rVFC). */
@@ -89,7 +91,10 @@ export class DiagnosticPanel {
     const { targetFps, minFps } = CONFIG.quality;
     const level = fpsLevel(d.detectionFps, targetFps, minFps);
     const rows: [string, string, string?][] = [
-      ['Résolution vidéo', `${d.videoWidth} × ${d.videoHeight}`],
+      [
+        'Résolution vidéo',
+        `${d.videoWidth} × ${d.videoHeight}${d.requestedResolution ? ` (forcée ${d.requestedResolution})` : ''}`,
+      ],
       ['Flux', FIT_LABEL[d.streamFit], d.streamFit === 'tourné' ? 'warn' : undefined],
       ['Écran', `${d.screenWidth} × ${d.screenHeight}`],
       [

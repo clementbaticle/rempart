@@ -17,6 +17,7 @@ import { DiagnosticPanel } from './diagnosticPanel';
 import { keepScreenAwake, requestFullscreen } from './screen';
 import { watchPower, type PowerState } from './power';
 import { resolveDelegates } from '../pose/delegateChoice';
+import { resolveResolution } from '../camera/resolutionChoice';
 
 function readCameraPosition(): CameraPosition {
   try {
@@ -67,10 +68,15 @@ export async function renderLiveView(root: HTMLElement): Promise<void> {
   });
 
   const delegateChoice = resolveDelegates(window.location.search, CONFIG.pose.delegates);
+  const resolutionChoice = resolveResolution(
+    window.location.search,
+    CONFIG.camera.resolutionPresets,
+    { width: CONFIG.camera.idealWidth, height: CONFIG.camera.idealHeight },
+  );
   let stream: MediaStream | null = null;
   let detector: PoseDetector;
   try {
-    const cam = await startCamera(video);
+    const cam = await startCamera(video, resolutionChoice.resolution);
     stream = cam.stream;
     status.textContent = 'Chargement du modèle de détection…';
     detector = await createPoseDetector(delegateChoice.delegates);
@@ -124,6 +130,9 @@ export async function renderLiveView(root: HTMLElement): Promise<void> {
     panel.update({
       videoWidth: video.videoWidth,
       videoHeight: video.videoHeight,
+      requestedResolution: resolutionChoice.forced
+        ? `${resolutionChoice.resolution.width} × ${resolutionChoice.resolution.height}`
+        : null,
       trackFrameRate: typeof s.frameRate === 'number' ? s.frameRate : null,
       cameraFps: cameraFps.fps(now),
       detectionFps: detectionFps.fps(now),

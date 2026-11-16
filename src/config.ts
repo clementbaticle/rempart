@@ -9,6 +9,15 @@ export const CONFIG = {
     idealWidth: 1280,
     idealHeight: 720,
     idealFrameRate: 30,
+    /**
+     * Résolutions pouvant être forcées par `?res=<largeur>` dans l'adresse (diagnostic).
+     * Le modèle réduit l'image en interne : une résolution plus basse peut accélérer le calcul.
+     */
+    resolutionPresets: {
+      '640': { width: 640, height: 480 },
+      '960': { width: 960, height: 540 },
+      '1280': { width: 1280, height: 720 },
+    },
   },
 
   pose: {

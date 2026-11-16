@@ -10,13 +10,20 @@ export interface CameraInfo {
 export class CameraError extends Error {}
 
 /** Ouvre la caméra frontale et l'attache à l'élément vidéo. */
-export async function startCamera(video: HTMLVideoElement): Promise<CameraInfo> {
+export async function startCamera(
+  video: HTMLVideoElement,
+  resolution: { width: number; height: number } = {
+    width: CONFIG.camera.idealWidth,
+    height: CONFIG.camera.idealHeight,
+  },
+): Promise<CameraInfo> {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new CameraError(
       'Caméra indisponible : ouvrir l’app en HTTPS (version déployée) dans Safari.',
     );
   }
-  const { facingMode, idealWidth, idealHeight, idealFrameRate } = CONFIG.camera;
+  const { facingMode, idealFrameRate } = CONFIG.camera;
+  const { width: idealWidth, height: idealHeight } = resolution;
   let stream: MediaStream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
