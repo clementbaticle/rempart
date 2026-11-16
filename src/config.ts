@@ -79,8 +79,9 @@ export const CONFIG = {
       minStepRatio: 0.1,
     },
     grid: {
-      /** Colonnes latérales à cette fraction de la portée latérale moyenne. */
-      lateralFraction: 0.9,
+      /** Grille de 12 zones : colonnes proches et lointaines, en fraction de la portée latérale moyenne. */
+      nearFraction: 0.5,
+      farFraction: 0.9,
       /** Rangée haute à cette fraction de la portée bras levés (mesurée depuis les chevilles). */
       topFraction: 0.9,
       /** Diamètre des cibles en proportion de la taille apparente. */
@@ -127,8 +128,8 @@ export const CONFIG = {
     /** Bornes des TR retenus dans les statistiques (section 9). */
     validRtMinMs: 150,
     validRtMaxMs: 1500,
-    /** Bloc Classique : nombre de passages par zone, répétitions consécutives maximales. */
-    classicRepeatsPerZone: 4,
+    /** Bloc Classique : nombre de passages par zone (12 zones × 3 = 36), répétitions consécutives maximales. */
+    classicRepeatsPerZone: 3,
     maxSameZoneInARow: 2,
   },
 

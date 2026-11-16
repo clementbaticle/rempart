@@ -1,8 +1,9 @@
 /** Séquences d'essais pré-tirées à partir d'une graine (zones + avant-périodes). */
+import { ZONE_COUNT } from '../calibration/grid';
 import { mulberry32, shuffle, uniform } from './random';
 
 export interface PlannedTrial {
-  /** Zone cible (1 à 9). */
+  /** Zone cible (1 à 12). */
   zone: number;
   /** Avant-période (ms), arrondie à la ms. */
   foreperiodMs: number;
@@ -28,7 +29,7 @@ export function classicBlock(
   p: { repeats: number; maxInARow: number; foreperiodMinMs: number; foreperiodMaxMs: number },
 ): PlannedTrial[] {
   const rng = mulberry32(seed);
-  const pool = Array.from({ length: 9 * p.repeats }, (_, i) => (i % 9) + 1);
+  const pool = Array.from({ length: ZONE_COUNT * p.repeats }, (_, i) => (i % ZONE_COUNT) + 1);
   let zones = shuffle(rng, pool);
   for (let attempt = 0; longestRun(zones) > p.maxInARow; attempt++) {
     if (attempt > 10000) throw new Error('Séquence impossible avec ces contraintes');

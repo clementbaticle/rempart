@@ -72,7 +72,13 @@ describe('zones', () => {
 
   it('chevauchement garde / cible', () => {
     // Mains de garde à (579, 410) et (701, 410) ; cible 5 en (640, 416) → chevauchement.
-    expect(guardOverlaps(guard, grid, 48, 1)).toEqual([5]);
+    expect(guardOverlaps(guard, grid, 48, 1)).toEqual([]);
+    // Colonnes proches resserrées : zones 6 et 7 en (560, 416) et (720, 416), sur les mains de garde.
+    const tight = computeGrid(
+      { heightPx: 400, pelvisX: 640, ankleY: 650, reachTopPx: 520, reachLeftPx: 320, reachRightPx: 320 },
+      1280, 720, { ...CONFIG.calibration.grid, nearFraction: 0.25 },
+    );
+    expect(guardOverlaps(guard, tight, 48, 1)).toEqual([6, 7]);
   });
 });
 
@@ -83,7 +89,8 @@ describe('issues et statistiques', () => {
     expect(classicOutcome({ targetZone: 1, touch: null, rtMs: 300, anticipationMs: 150 })).toBe('miss');
     expect(classicOutcome({ targetZone: 2, touch: t, rtMs: 300, anticipationMs: 150 })).toBe('wrong_zone');
     expect(classicOutcome({ targetZone: 1, touch: { zone: 1, effector: 'pied-gauche' }, rtMs: 300, anticipationMs: 150 })).toBe('wrong_effector');
-    expect(classicOutcome({ targetZone: 7, touch: { zone: 7, effector: 'pied-gauche' }, rtMs: 300, anticipationMs: 150 })).toBe('hit');
+    expect(classicOutcome({ targetZone: 7, touch: { zone: 7, effector: 'pied-gauche' }, rtMs: 300, anticipationMs: 150 })).toBe('wrong_effector');
+    expect(classicOutcome({ targetZone: 9, touch: { zone: 9, effector: 'pied-gauche' }, rtMs: 300, anticipationMs: 150 })).toBe('hit');
   });
 
   it('quantiles type 7', () => {
@@ -236,5 +243,31 @@ describe('automate d’essai', () => {
       [2, 3, 'hit'],
     ]);
     expect(d.events.at(-1)).toEqual({ type: 'done' });
+  });
+
+  it('un effecteur déjà dans une cible à l’apparition ne compte pas tant qu’il n’en est pas sorti', () => {
+    // Grille resserrée : la main gauche de garde (579, 410) est dans le cercle de la zone 6 (560, 416).
+    const tight = computeGrid(
+      { heightPx: 400, pelvisX: 640, ankleY: 650, reachTopPx: 520, reachLeftPx: 320, reachRightPx: 320 },
+      1280, 720, { ...CONFIG.calibration.grid, nearFraction: 0.25 },
+    );
+    const zone = (id: number): Point => tight.zones.find((z) => z.id === id)!.center;
+    const run = (after: Points[]) => {
+      const events: MachineEvent[] = [];
+      const m = new TrialMachine([{ zone: 1, foreperiodMs: 1000 }], guard, tight, P, mulberry32(1), (e) => events.push(e));
+      let t = 1000;
+      while (m.phase !== 'stimulus') m.onFrame({ t: (t += 40), points: makePose(), presentedFrames: null, visibility: 1 }, t);
+      m.stimulusShown(t + 10, t + 5);
+      for (const p of after) m.onFrame({ t: (t += 40), points: p, presentedFrames: null, visibility: 1 }, t);
+      return m;
+    };
+    // Main restée dans la zone 6 : aucune touche, puis touche de la cible 1 → réussite.
+    const a = run([makePose(), makePose(), makePose(), makePose(), makePose(), leftHandAt(makePose(), zone(1))]);
+    expect(a.records[0]!.outcome).toBe('hit');
+    expect(a.records[0]!.touchedZone).toBe(1);
+    // Main qui sort de la zone 6 puis y revient : c'est une entrée → mauvaise zone.
+    const b = run([makePose(), makePose(), makePose(), makePose(), moveLeftHand(makePose(), -100, -100), makePose()]);
+    expect(b.records[0]!.outcome).toBe('wrong_zone');
+    expect(b.records[0]!.touchedZone).toBe(6);
   });
 });

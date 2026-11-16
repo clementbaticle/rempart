@@ -51,14 +51,19 @@ export function touches(p: Points, grid: Grid, hitFactor: number): Touch[] {
   return out;
 }
 
+export const touchKey = (t: Touch): string => `${t.zone}:${t.effector}`;
+
 /**
- * Touche retenue pour l'image : la zone cible si elle est touchée (main d'abord), sinon la première autre
- * zone touchée. null si aucune.
+ * Touche retenue parmi celles d'une image : la zone cible si elle est touchée (main d'abord),
+ * sinon la première autre zone touchée. null si aucune.
  */
-export function firstTouch(p: Points, grid: Grid, hitFactor: number, targetZone: number): Touch | null {
-  const all = touches(p, grid, hitFactor);
+export function pickTouch(all: readonly Touch[], targetZone: number): Touch | null {
   if (all.length === 0) return null;
   const onTarget = all.filter((t) => t.zone === targetZone);
   const pool = onTarget.length ? onTarget : all;
   return pool.find((t) => !isFoot(t.effector)) ?? pool[0]!;
+}
+
+export function firstTouch(p: Points, grid: Grid, hitFactor: number, targetZone: number): Touch | null {
+  return pickTouch(touches(p, grid, hitFactor), targetZone);
 }

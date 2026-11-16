@@ -1,4 +1,4 @@
-/** Dessin de la grille 3 × 3 (couleurs neutres, aucune couleur de cible ni du club). */
+/** Dessin de la grille de 12 zones (couleurs neutres, aucune couleur de cible ni du club). */
 import type { Grid } from '../calibration/grid';
 import type { Point } from '../calibration/geometry';
 import type { Rect } from '../pose/landmarks';

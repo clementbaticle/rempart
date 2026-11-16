@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mulberry32, shuffle, uniform } from './random';
 import { classicBlock, longestRun } from './sequence';
 
-const P = { repeats: 4, maxInARow: 2, foreperiodMinMs: 800, foreperiodMaxMs: 2000 };
+const P = { repeats: 3, maxInARow: 2, foreperiodMinMs: 800, foreperiodMaxMs: 2000 };
 
 describe('mulberry32', () => {
   it('même graine → même suite ; graines différentes → suites différentes', () => {
@@ -32,11 +32,11 @@ describe('mulberry32', () => {
 });
 
 describe('séquence Classique', () => {
-  it('36 essais, 4 par zone, jamais plus de 2 fois de suite la même zone', () => {
+  it('36 essais, 3 par zone (12 zones), jamais plus de 2 fois de suite la même zone', () => {
     for (const seed of [1, 2, 3, 999, 123456]) {
       const s = classicBlock(seed, P);
       expect(s).toHaveLength(36);
-      for (let z = 1; z <= 9; z++) expect(s.filter((t) => t.zone === z)).toHaveLength(4);
+      for (let z = 1; z <= 12; z++) expect(s.filter((t) => t.zone === z)).toHaveLength(3);
       expect(longestRun(s.map((t) => t.zone))).toBeLessThanOrEqual(2);
       s.forEach((t) => expect(t.foreperiodMs >= 800 && t.foreperiodMs <= 2000).toBe(true));
     }

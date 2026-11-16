@@ -7,7 +7,7 @@ import {
   apparentSizeChange, isArmsRaised, isArmsSpread, isStepped, measureGuard, measureLateral,
   measureReachTop, measureSpan, pixelsPerCm,
 } from './measures';
-import { computeGrid } from './grid';
+import { colOf, computeGrid, rowOf } from './grid';
 import { CalibrationWizard } from './wizard';
 import { makePose, withMissing } from './testPose';
 
@@ -127,24 +127,32 @@ describe('mesures', () => {
 describe('grille', () => {
   const input = { heightPx: 400, pelvisX: 640, ankleY: 650, reachTopPx: 500, reachLeftPx: 300, reachRightPx: 340 };
 
-  it('place les 9 zones symétriquement autour du bassin', () => {
+  it('place les 12 zones symétriquement autour du bassin, sans colonne centrale', () => {
     const g = computeGrid(input, W, H, C.grid);
-    expect(g.zones).toHaveLength(9);
-    const z = (id: number) => g.zones.find((q) => q.id === id)!.center;
-    // Portée latérale moyenne 320 × 0,9 = 288.
-    expect(z(1)).toEqual({ x: 352, y: 200 }); // haut gauche : 650 − 0,9 × 500
-    expect(z(5)).toEqual({ x: 640, y: 425 });
-    expect(z(9)).toEqual({ x: 928, y: 650 });
+    expect(g.zones).toHaveLength(12);
+    const z = (id: number) => g.zones.find((q) => q.id === id)!;
+    // Portée latérale moyenne 320 : colonnes à ± 0,5 × 320 = 160 et ± 0,9 × 320 = 288.
+    expect(z(1).center).toEqual({ x: 352, y: 200 }); // haut, lointaine gauche : 650 − 0,9 × 500
+    expect(z(2).center).toEqual({ x: 480, y: 200 });
+    expect(z(7).center).toEqual({ x: 800, y: 425 });
+    expect(z(12).center).toEqual({ x: 928, y: 650 });
+    expect([z(2).side, z(3).side]).toEqual(['left', 'right']);
+    expect(g.zones.some((q) => q.center.x === 640)).toBe(false);
     expect(g.targetRadiusPx).toBeCloseTo(36);
+  });
+
+  it('rangée et colonne d’une zone', () => {
+    expect([rowOf(1), rowOf(4), rowOf(5), rowOf(12)]).toEqual([0, 0, 1, 2]);
+    expect([colOf(1), colOf(4), colOf(5), colOf(12)]).toEqual([0, 3, 0, 3]);
   });
 
   it('signale les cibles qui sortent de l’image', () => {
     expect(computeGrid(input, W, H, C.grid).fits).toBe(true);
     const g = computeGrid({ ...input, ankleY: 700 }, W, H, C.grid);
     expect(g.fits).toBe(false); // rangée basse : 700 + 36 > 720
-    expect(g.overflowing).toEqual([7, 8, 9]);
+    expect(g.overflowing).toEqual([9, 10, 11, 12]);
     const wide = computeGrid({ ...input, reachLeftPx: 800, reachRightPx: 800 }, W, H, C.grid);
-    expect(wide.overflowing).toEqual([1, 3, 4, 6, 7, 9]);
+    expect(wide.overflowing).toEqual([1, 4, 5, 8, 9, 12]);
   });
 });
 

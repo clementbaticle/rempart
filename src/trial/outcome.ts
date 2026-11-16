@@ -1,4 +1,5 @@
 /** Issues des essais (section 5, point 5) et statistiques de séance (section 9). */
+import { rowOf } from '../calibration/grid';
 import { isFoot, type Touch } from './zones';
 
 export type Outcome =
@@ -9,9 +10,6 @@ export type Outcome =
   | 'commission'
   | 'correct_rejection'
   | 'anticipation';
-
-/** Rangée (0 haut, 1 milieu, 2 bas) d'une zone 1-9. */
-export const rowOf = (zone: number): number => Math.floor((zone - 1) / 3);
 
 /**
  * Mode Classique : n'importe quel effecteur, sauf un pied sur les rangées haute et du milieu.

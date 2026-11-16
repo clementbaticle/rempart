@@ -13,7 +13,7 @@ import { uniform, type Rng } from '../core/random';
 import type { PlannedTrial } from '../core/sequence';
 import { bodySample, features, meanFeatures, movementCause, swayRatio, type BodySample, type Features, type InitiationCause } from './body';
 import { classicOutcome, type Outcome } from './outcome';
-import { firstTouch, handsInGuard, type Effector, type Touch } from './zones';
+import { handsInGuard, pickTouch, touchKey, touches, type Effector, type Touch } from './zones';
 
 export interface TrialParams {
   guardRadiusRatio: number;
@@ -130,6 +130,13 @@ export class TrialMachine {
   private responseFrames = 0;
   private visSum = 0;
   private phaseUntil = 0;
+  /** Points de la dernière image capturée avant l'apparition. */
+  private lastPrePoints: Points = [];
+  /**
+   * Couples zone/effecteur déjà en contact à l'apparition : ils ne comptent qu'après être
+   * sortis du cercle puis y être revenus (la touche est une ENTRÉE dans la cible).
+   */
+  private blocked = new Set<string>();
 
   constructor(
     private readonly plan: readonly PlannedTrial[],
@@ -152,6 +159,7 @@ export class TrialMachine {
   onFrame(fr: FrameInput, now: number): void {
     const body = bodySample(fr.points);
     const f = features(body);
+    if (this.phase !== 'response' || fr.t < this.tStim) this.lastPrePoints = fr.points;
 
     switch (this.phase) {
       case 'waitGuard':
@@ -187,6 +195,7 @@ export class TrialMachine {
         this.trajectory.push(trajectoryRow(fr.t, body));
         if (fr.t < this.tStim) {
           this.remember(fr.t, f); // image capturée avant l'apparition
+          this.blocked = new Set(touches(fr.points, this.grid, this.p.hitToleranceFactor).map(touchKey));
           break;
         }
         this.responseFrames += 1;
@@ -205,7 +214,10 @@ export class TrialMachine {
           }
         }
         {
-          const touch = firstTouch(fr.points, this.grid, this.p.hitToleranceFactor, this.currentZone!);
+          const all = touches(fr.points, this.grid, this.p.hitToleranceFactor);
+          const current = new Set(all.map(touchKey));
+          for (const k of this.blocked) if (!current.has(k)) this.blocked.delete(k); // sorti du cercle
+          const touch = pickTouch(all.filter((t) => !this.blocked.has(touchKey(t))), this.currentZone!);
           if (touch) {
             if (this.tInit === null) {
               this.tInit = fr.t;
@@ -232,6 +244,7 @@ export class TrialMachine {
     const window = this.recent.filter((s) => s.t >= tPerf - this.p.baselineMs && s.t < tPerf);
     const base = window.length ? window : this.recent.slice(-1);
     this.baseline = meanFeatures(base.map((s) => s.f));
+    this.blocked = new Set(touches(this.lastPrePoints, this.grid, this.p.hitToleranceFactor).map(touchKey));
     this.tInit = null;
     this.initCause = null;
     this.lastPresented = null;
