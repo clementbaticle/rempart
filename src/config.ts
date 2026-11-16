@@ -72,27 +72,29 @@ export const CONFIG = {
       centerMin: 0.3,
       centerMax: 0.7,
     },
-    postures: {
-      /** Envergure : poignets à l'horizontale des épaules, à ± cette proportion de la taille. */
-      armsLevelTolerance: 0.15,
-      /** Pas latéral : déplacement minimal du bassin par rapport à la garde (proportion de la taille). */
-      minStepRatio: 0.1,
+    /** Cage de handball réelle (section 4, point 1). */
+    goal: {
+      widthCm: 300,
+      heightCm: 200,
+      /** Écart toléré du rapport largeur / hauteur mesuré par rapport à 3 / 2 (proportion). */
+      aspectTolerance: 0.25,
     },
+    /** Grille de 12 zones à des positions réelles dans la cage (section 4, point 5). */
     grid: {
-      /** Grille de 12 zones : colonnes proches et lointaines, en fraction de la portée latérale moyenne. */
-      nearFraction: 0.5,
-      farFraction: 0.9,
-      /** Rangée haute à cette fraction de la portée bras levés (mesurée depuis les chevilles). */
-      topFraction: 0.9,
-      /** Diamètre des cibles en proportion de la taille apparente. */
-      targetDiameterRatio: 0.18,
+      /** Colonnes : 25 cm à l'intérieur de chaque poteau (± 125) et à 60 cm du centre (cm). */
+      columnsCm: [-125, -60, 60, 125],
+      /** Rangées : hauteur au-dessus du sol, de haut en bas (cm). */
+      rowHeightsCm: [165, 100, 40],
+      targetDiameterCm: 30,
     },
+    /** Hauteur moyenne des chevilles au-dessus du sol (cm), pour placer le sol sous la joueuse. */
+    ankleHeightCm: 8,
     /**
      * Rapport « visage → chevilles » / taille réelle, pour l'échelle px/cm (approximation :
      * le repère haut est le visage, pas le sommet du crâne).
      */
     faceToAnkleOverStature: 0.9,
-    /** Écart de taille apparente avec la calibration précédente déclenchant l'alerte. */
+    /** Écart de taille de la cage à l'image avec la calibration précédente déclenchant l'alerte. */
     distanceAlertRatio: 0.1,
   },
 
@@ -104,9 +106,9 @@ export const CONFIG = {
     /** Zone de garde : rayon autour de la position de garde de chaque main (proportion de la taille apparente). */
     guardRadiusRatio: 0.12,
     /** Présence des deux mains dans la zone de garde exigée avant l'avant-période (ms). */
-    guardPresenceMs: 300,
-    foreperiodMinMs: 800,
-    foreperiodMaxMs: 2000,
+    guardPresenceMs: 150,
+    foreperiodMinMs: 600,
+    foreperiodMaxMs: 1500,
     /** Référence de position : moyenne sur cette durée avant l'apparition (ms). */
     baselineMs: 300,
     /** Référence glissante pour détecter un faux départ pendant l'avant-période (ms). */
@@ -119,10 +121,10 @@ export const CONFIG = {
     noGoWindowMs: 1500,
     /** Initiation plus précoce que ce délai après l'apparition = anticipation (ms). */
     anticipationMs: 150,
-    /** Durée du retour visuel (ms). */
+    /** Durée du retour visuel (ms), comprise dans l'intervalle. */
     feedbackMs: 300,
-    /** Intervalle avant l'essai suivant (ms), puis retour en garde. */
-    itiMs: 1000,
+    /** Intervalle entre la réponse et l'essai suivant (ms), retour visuel compris ; puis retour en garde. */
+    itiMs: 300,
     /** Multiplicateur du rayon de cible pour la détection de touche. */
     hitToleranceFactor: 1,
     /** Bornes des TR retenus dans les statistiques (section 9). */
@@ -140,6 +142,7 @@ export const CONFIG = {
 
   storageKeys: {
     cameraPosition: 'rempart.cameraPosition',
+    goalCorners: 'rempart.goalCorners',
   },
 } as const;
 

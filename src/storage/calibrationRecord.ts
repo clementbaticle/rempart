@@ -1,7 +1,8 @@
 /** Enregistrement d'une calibration (section 8) et sa construction (logique pure). */
-import type { Grid } from '../calibration/grid';
-import type { WizardResult } from '../calibration/wizard';
+import { goalGeometry, type GoalCorners, type GoalGeometry } from '../calibration/goal';
+import { computeGrid, type Grid, type GridParams } from '../calibration/grid';
 import { pixelsPerCm } from '../calibration/measures';
+import type { WizardResult } from '../calibration/wizard';
 
 export interface CalibrationRecord {
   id: string;
@@ -9,20 +10,14 @@ export interface CalibrationRecord {
   /** Date-heure ISO 8601. */
   date: string;
   video: { width: number; height: number };
-  /** Mesures en pixels image (miroir). */
+  goal: { corners: GoalCorners; geometry: GoalGeometry };
+  /** Mesures de garde en pixels image (miroir). */
   measures: WizardResult;
-  /** Pixels par cm (approximation, voir config). */
+  /** Échelle de la joueuse (px / cm, approximation visage → chevilles). */
   pxPerCm: number;
-  /** Mesures converties en cm (approximation). */
-  cm: {
-    shoulderWidth: number;
-    span: number;
-    reachTop: number;
-    reachLeft: number;
-    reachRight: number;
-    stepLeft: number;
-    stepRight: number;
-  };
+  /** Échelle joueuse / échelle cage (> 1 : la joueuse est devant la cage). */
+  depthRatio: number;
+  cm: { shoulderWidth: number };
   grid: Grid;
   context: {
     appVersion: string;
@@ -38,31 +33,34 @@ export function buildCalibrationRecord(args: {
   date: Date;
   statureCm: number;
   faceToAnkleOverStature: number;
+  ankleHeightCm: number;
+  goalSizeCm: { width: number; height: number };
+  gridParams: GridParams;
   video: { width: number; height: number };
+  corners: GoalCorners;
   result: WizardResult;
-  grid: Grid;
   context: CalibrationRecord['context'];
 }): CalibrationRecord {
-  const r = args.result;
-  const pxPerCm = pixelsPerCm(r.guard.heightPx, args.statureCm, args.faceToAnkleOverStature);
-  const cm = (px: number): number => Math.round((px / pxPerCm) * 10) / 10;
+  const g = args.result.guard;
+  const geometry = goalGeometry(args.corners, args.goalSizeCm.width, args.goalSizeCm.height);
+  const pxPerCm = pixelsPerCm(g.heightPx, args.statureCm, args.faceToAnkleOverStature);
+  const grid = computeGrid(
+    { playerPxPerCm: pxPerCm, centerX: geometry.centerX, floorY: g.ankleY + args.ankleHeightCm * pxPerCm },
+    args.video.width,
+    args.video.height,
+    args.gridParams,
+  );
   return {
     id: args.id,
     playerId: args.playerId,
     date: args.date.toISOString(),
     video: args.video,
-    measures: r,
+    goal: { corners: args.corners, geometry },
+    measures: args.result,
     pxPerCm,
-    cm: {
-      shoulderWidth: cm(r.guard.shoulderWidthPx),
-      span: cm(r.spanPx),
-      reachTop: cm(r.reachTopPx),
-      reachLeft: cm(r.left.reachPx),
-      reachRight: cm(r.right.reachPx),
-      stepLeft: cm(r.left.stepPx),
-      stepRight: cm(r.right.stepPx),
-    },
-    grid: args.grid,
+    depthRatio: pxPerCm / geometry.pxPerCm,
+    cm: { shoulderWidth: Math.round((g.shoulderWidthPx / pxPerCm) * 10) / 10 },
+    grid,
     context: args.context,
   };
 }

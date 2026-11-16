@@ -12,10 +12,13 @@ import { firstTouch, guardOverlaps, handsInGuard } from './zones';
 
 const P = CONFIG.trial;
 const guard = measureGuard(makePose())!; // taille 400 px → seuil 20 px, rayon de garde 48 px
-const grid = computeGrid(
-  { heightPx: 400, pelvisX: 640, ankleY: 650, reachTopPx: 520, reachLeftPx: 320, reachRightPx: 320 },
-  1280, 720, CONFIG.calibration.grid,
-); // colonnes 352 / 640 / 928 ; rangées 182 / 416 / 650 ; rayon 36
+// 2 px/cm, cage centrée en 640, sol à 666 (chevilles 650 + 8 cm) :
+// colonnes 390 / 520 / 760 / 890 ; rangées 336 / 466 / 586 ; rayon 30.
+const grid = computeGrid({ playerPxPerCm: 2, centerX: 640, floorY: 666 }, 1280, 720, CONFIG.calibration.grid);
+/** Grille resserrée : zones 6 et 7 en (580, 410) et (700, 410), sur les mains de garde. */
+const tight = computeGrid({ playerPxPerCm: 2, centerX: 640, floorY: 666 }, 1280, 720, {
+  columnsCm: [-125, -30, 30, 125], rowHeightsCm: [165, 128, 40], targetDiameterCm: 30,
+});
 const center = (zone: number): Point => grid.zones.find((z) => z.id === zone)!.center;
 
 /** Déplace tout le corps (rebond, décalage). */
@@ -71,14 +74,8 @@ describe('zones', () => {
   });
 
   it('chevauchement garde / cible', () => {
-    // Mains de garde à (579, 410) et (701, 410) ; cible 5 en (640, 416) → chevauchement.
     expect(guardOverlaps(guard, grid, 48, 1)).toEqual([]);
-    // Colonnes proches resserrées : zones 6 et 7 en (560, 416) et (720, 416), sur les mains de garde.
-    const tight = computeGrid(
-      { heightPx: 400, pelvisX: 640, ankleY: 650, reachTopPx: 520, reachLeftPx: 320, reachRightPx: 320 },
-      1280, 720, { ...CONFIG.calibration.grid, nearFraction: 0.25 },
-    );
-    expect(guardOverlaps(guard, tight, 48, 1)).toEqual([6, 7]);
+    expect(guardOverlaps(guard, tight, 48, 1)).toEqual([2, 3, 6, 7]);
   });
 });
 
@@ -246,11 +243,7 @@ describe('automate d’essai', () => {
   });
 
   it('un effecteur déjà dans une cible à l’apparition ne compte pas tant qu’il n’en est pas sorti', () => {
-    // Grille resserrée : la main gauche de garde (579, 410) est dans le cercle de la zone 6 (560, 416).
-    const tight = computeGrid(
-      { heightPx: 400, pelvisX: 640, ankleY: 650, reachTopPx: 520, reachLeftPx: 320, reachRightPx: 320 },
-      1280, 720, { ...CONFIG.calibration.grid, nearFraction: 0.25 },
-    );
+    // Grille resserrée : la main gauche de garde (579, 410) est dans le cercle de la zone 6 (580, 410).
     const zone = (id: number): Point => tight.zones.find((z) => z.id === id)!.center;
     const run = (after: Points[]) => {
       const events: MachineEvent[] = [];

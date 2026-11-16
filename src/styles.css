@@ -629,3 +629,30 @@ body {
 .trial__warn[hidden] {
   display: none;
 }
+
+/* Saisie des coins de la cage : consignes en bas pour dégager la barre transversale. */
+.calib--goal .calib__hud {
+  top: auto;
+  bottom: max(4.5rem, env(safe-area-inset-bottom));
+}
+
+.calib__hud {
+  pointer-events: none;
+}
+
+.calib__goal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+  pointer-events: auto;
+}
+
+.calib__goal-actions:empty {
+  display: none;
+}
+
+.calib__goal-actions .btn {
+  font-size: 1.1rem;
+  padding: 0.6em 1.3em;
+}

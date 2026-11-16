@@ -86,6 +86,7 @@ export class CameraStage {
   private cameraPositionValue = readCameraPosition();
   private readonly delegateChoice = resolveDelegates(window.location.search, CONFIG.pose.delegates);
   private readonly layers: Layer[] = [];
+  private rectValue: Rect = { x: 0, y: 0, width: 0, height: 0 };
   private relayout: () => void = () => {};
   private statsGetter: () => StageStats = () => ({
     meanDetectionFps: null, droppedRatio: 0, timestampSource: '—', resolution: '—', videoWidth: 0, videoHeight: 0,
@@ -119,6 +120,11 @@ export class CameraStage {
 
   get delegate(): string {
     return this.detector?.delegate ?? '—';
+  }
+
+  /** Rectangle d'affichage de la vidéo dans la scène (pixels CSS). */
+  videoRect(): Rect {
+    return this.rectValue;
   }
 
   stats(): StageStats {
@@ -179,6 +185,7 @@ export class CameraStage {
     const layout = (): void => {
       const box = stage.getBoundingClientRect();
       rect = fitContain(video.videoWidth, video.videoHeight, box.width, box.height);
+      this.rectValue = rect;
       overlay.resize(box.width, box.height, rect);
       const dpr = window.devicePixelRatio || 1;
       for (const l of this.layers) {

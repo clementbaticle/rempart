@@ -3,10 +3,8 @@ import { CONFIG } from '../config';
 import { apparentHeight, flatten, toImagePoints, unflatten, POSTURE_POINTS } from './geometry';
 import { checkFraming } from './framing';
 import { StableHold } from './stability';
-import {
-  apparentSizeChange, isArmsRaised, isArmsSpread, isStepped, measureGuard, measureLateral,
-  measureReachTop, measureSpan, pixelsPerCm,
-} from './measures';
+import { apparentSizeChange, measureGuard, pixelsPerCm } from './measures';
+import { checkGoal, goalGeometry, orderCorners } from './goal';
 import { colOf, computeGrid, rowOf } from './grid';
 import { CalibrationWizard } from './wizard';
 import { makePose, withMissing } from './testPose';
@@ -82,63 +80,61 @@ describe('StableHold', () => {
   });
 });
 
-describe('mesures', () => {
-  const guard = measureGuard(makePose())!;
-
-  it('garde', () => {
-    expect(guard).toEqual({
+describe('mesures de garde', () => {
+  it('garde : taille, épaules, bassin, mains, chevilles', () => {
+    expect(measureGuard(makePose())).toEqual({
       heightPx: 400, faceTopY: 250, ankleY: 650, shoulderWidthPx: 100, pelvis: { x: 640, y: 450 },
       shoulderCenter: { x: 640, y: 320 }, leftHand: { x: 579, y: 410 }, rightHand: { x: 701, y: 410 },
       leftAnkle: { x: 600, y: 650 }, rightAnkle: { x: 680, y: 650 },
     });
-  });
-
-  it('postures reconnues', () => {
-    expect(isArmsSpread(makePose({ arms: 'spread' }), 400, 0.15)).toBe(true);
-    expect(isArmsSpread(makePose(), 400, 0.15)).toBe(false);
-    expect(isArmsRaised(makePose({ arms: 'raised' }))).toBe(true);
-    expect(isArmsRaised(makePose({ arms: 'spread' }))).toBe(false);
-    expect(isStepped(makePose({ cx: 540 }), guard, 'left', 0.1)).toBe(true); // 100 px ≥ 40
-    expect(isStepped(makePose({ cx: 540 }), guard, 'right', 0.1)).toBe(false);
-    expect(isStepped(makePose({ cx: 630 }), guard, 'left', 0.1)).toBe(false);
-  });
-
-  it('envergure, portée haute, portées latérales', () => {
-    expect(measureSpan(makePose({ arms: 'spread' }))).toBe(440);
-    expect(measureReachTop(makePose({ arms: 'raised' }), guard)).toBe(520);
-    expect(measureLateral(makePose({ cx: 540, arms: 'spread' }), guard, 'left')).toEqual({
-      reachPx: 320,
-      stepPx: 100,
-    });
-    expect(measureLateral(makePose({ cx: 760, arms: 'spread' }), guard, 'right')).toEqual({
-      reachPx: 340,
-      stepPx: 120,
-    });
+    expect(measureGuard(withMissing(makePose(), 15, 19))).toBeNull();
   });
 
   it('échelle et comparaison de distance', () => {
     expect(pixelsPerCm(400, 170, 0.9)).toBeCloseTo(400 / 153);
-    expect(apparentSizeChange({ heightPx: 440, videoHeight: 720 }, { heightPx: 400, videoHeight: 720 })).toBeCloseTo(0.1);
+    expect(apparentSizeChange({ sizePx: 660, videoHeight: 720 }, { sizePx: 600, videoHeight: 720 })).toBeCloseTo(0.1);
     // Même distance, résolution différente : aucun écart.
-    expect(apparentSizeChange({ heightPx: 266.67, videoHeight: 480 }, { heightPx: 400, videoHeight: 720 })).toBeCloseTo(0, 3);
+    expect(apparentSizeChange({ sizePx: 400, videoHeight: 480 }, { sizePx: 600, videoHeight: 720 })).toBeCloseTo(0, 6);
   });
 });
 
-describe('grille', () => {
-  const input = { heightPx: 400, pelvisX: 640, ankleY: 650, reachTopPx: 500, reachLeftPx: 300, reachRightPx: 340 };
+describe('cage', () => {
+  const TL = { x: 340, y: 300 }, TR = { x: 940, y: 300 }, BL = { x: 340, y: 700 }, BR = { x: 940, y: 700 };
 
-  it('place les 12 zones symétriquement autour du bassin, sans colonne centrale', () => {
+  it('range les 4 coins touchés dans n’importe quel ordre', () => {
+    expect(orderCorners([BR, TL, BL, TR])).toEqual({ topLeft: TL, topRight: TR, bottomLeft: BL, bottomRight: BR });
+    expect(orderCorners([TL, TR, BL])).toBeNull();
+  });
+
+  it('géométrie : échelle 2 px/cm pour 600 × 400 px', () => {
+    const g = goalGeometry(orderCorners([TL, TR, BL, BR])!, 300, 200);
+    expect(g).toEqual({ widthPx: 600, heightPx: 400, pxPerCm: 2, centerX: 640, aspect: 1.5 });
+    expect(checkGoal(g, 1.5, 0.25)).toEqual([]);
+  });
+
+  it('signale une forme incohérente', () => {
+    const g = goalGeometry(orderCorners([TL, TR, { x: 340, y: 900 }, { x: 940, y: 900 }])!, 300, 200);
+    expect(checkGoal(g, 1.5, 0.25)[0]).toMatch(/Forme inattendue/);
+  });
+});
+
+describe('grille dans la cage', () => {
+  const input = { playerPxPerCm: 2, centerX: 640, floorY: 680 };
+
+  it('12 zones à leurs positions réelles, sans colonne centrale', () => {
     const g = computeGrid(input, W, H, C.grid);
     expect(g.zones).toHaveLength(12);
     const z = (id: number) => g.zones.find((q) => q.id === id)!;
-    // Portée latérale moyenne 320 : colonnes à ± 0,5 × 320 = 160 et ± 0,9 × 320 = 288.
-    expect(z(1).center).toEqual({ x: 352, y: 200 }); // haut, lointaine gauche : 650 − 0,9 × 500
-    expect(z(2).center).toEqual({ x: 480, y: 200 });
-    expect(z(7).center).toEqual({ x: 800, y: 425 });
-    expect(z(12).center).toEqual({ x: 928, y: 650 });
+    // Colonnes ± 125 et ± 60 cm, rangées 165 / 100 / 40 cm, 2 px/cm, sol à 680.
+    expect(z(1).center).toEqual({ x: 390, y: 350 });
+    expect(z(2).center).toEqual({ x: 520, y: 350 });
+    expect(z(7).center).toEqual({ x: 760, y: 480 });
+    expect(z(12).center).toEqual({ x: 890, y: 600 });
+    expect(z(12).realCm).toEqual({ x: 125, height: 40 });
     expect([z(2).side, z(3).side]).toEqual(['left', 'right']);
     expect(g.zones.some((q) => q.center.x === 640)).toBe(false);
-    expect(g.targetRadiusPx).toBeCloseTo(36);
+    expect(g.targetRadiusPx).toBe(30);
+    expect(g.fits).toBe(true);
   });
 
   it('rangée et colonne d’une zone', () => {
@@ -147,12 +143,9 @@ describe('grille', () => {
   });
 
   it('signale les cibles qui sortent de l’image', () => {
-    expect(computeGrid(input, W, H, C.grid).fits).toBe(true);
-    const g = computeGrid({ ...input, ankleY: 700 }, W, H, C.grid);
-    expect(g.fits).toBe(false); // rangée basse : 700 + 36 > 720
-    expect(g.overflowing).toEqual([9, 10, 11, 12]);
-    const wide = computeGrid({ ...input, reachLeftPx: 800, reachRightPx: 800 }, W, H, C.grid);
-    expect(wide.overflowing).toEqual([1, 4, 5, 8, 9, 12]);
+    const g = computeGrid({ playerPxPerCm: 3, centerX: 400, floorY: 700 }, W, H, C.grid);
+    expect(g.overflowing).toEqual([1, 5, 9]); // 400 − 375 − 45 < 0
+    expect(g.fits).toBe(false);
   });
 });
 
@@ -163,46 +156,25 @@ describe('CalibrationWizard', () => {
     return t;
   }
 
-  it('enchaîne toutes les étapes et produit les mesures', () => {
+  it('cadrage puis garde immobile → mesures de garde', () => {
     const w = new CalibrationWizard(C);
     let t = run(w, 0, makePose(), 1100);
     expect(w.step).toBe('guard');
     t = run(w, t, makePose(), 2100);
-    expect(w.step).toBe('span');
-    t = run(w, t, makePose({ arms: 'spread' }), 2100);
-    expect(w.step).toBe('raised');
-    t = run(w, t, makePose({ arms: 'raised' }), 2100);
-    expect(w.step).toBe('stepLeft');
-    t = run(w, t, makePose({ cx: 540, arms: 'spread' }), 2100);
-    expect(w.step).toBe('stepRight');
-    run(w, t, makePose({ cx: 760, arms: 'spread' }), 2100);
     expect(w.step).toBe('done');
-    expect(w.result).toEqual({
-      guard: {
-  heightPx: 400, faceTopY: 250, ankleY: 650, shoulderWidthPx: 100, pelvis: { x: 640, y: 450 },
-  shoulderCenter: { x: 640, y: 320 }, leftHand: { x: 579, y: 410 }, rightHand: { x: 701, y: 410 },
-  leftAnkle: { x: 600, y: 650 }, rightAnkle: { x: 680, y: 650 },
-},
-      spanPx: 440,
-      reachTopPx: 520,
-      left: { reachPx: 320, stepPx: 100 },
-      right: { reachPx: 340, stepPx: 120 },
-    });
+    expect(w.result?.guard.heightPx).toBe(400);
   });
 
-  it('n’avance pas si la posture demandée n’est pas tenue', () => {
+  it('cadrage incorrect : consigne et pas d’avancée', () => {
     const w = new CalibrationWizard(C);
-    let t = run(w, 0, makePose(), 1100);
-    t = run(w, t, makePose(), 2100);
-    const s = w.update(t, makePose(), W, H); // bras non écartés
-    expect(s.step).toBe('span');
+    const s = w.update(0, withMissing(makePose(), 31), W, H);
     expect(s.valid).toBe(false);
-    expect(s.feedback).toMatch(/hauteur d’épaules/);
-    run(w, t, makePose(), 3000);
-    expect(w.step).toBe('span');
+    expect(s.feedback).toMatch(/Pieds/);
+    run(w, 0, withMissing(makePose(), 31), 3000);
+    expect(w.step).toBe('framing');
   });
 
-  it('un mouvement remet le chronomètre à zéro', () => {
+  it('un mouvement pendant la garde remet le chronomètre à zéro', () => {
     const w = new CalibrationWizard(C);
     let t = run(w, 0, makePose(), 1100);
     t = run(w, t, makePose(), 1500);

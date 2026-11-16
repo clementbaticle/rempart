@@ -130,6 +130,8 @@ export class TrialMachine {
   private responseFrames = 0;
   private visSum = 0;
   private phaseUntil = 0;
+  /** Fin de l'intervalle (compté depuis la réponse, retour visuel compris). */
+  private itiUntil = 0;
   /** Points de la dernière image capturée avant l'apparition. */
   private lastPrePoints: Points = [];
   /**
@@ -260,8 +262,7 @@ export class TrialMachine {
       this.finish(null, null, now); // plus aucune image : délai dépassé
     } else if (this.phase === 'feedback' && now >= this.phaseUntil) {
       this.phase = 'iti';
-      this.phaseUntil = now + this.p.itiMs;
-    } else if (this.phase === 'iti' && now >= this.phaseUntil) {
+    } else if (this.phase === 'iti' && now >= this.itiUntil) {
       this.index += 1;
       this.falseStarts = 0;
       this.guardSince = null;
@@ -336,6 +337,7 @@ export class TrialMachine {
     this.records.push(record);
     this.phase = 'feedback';
     this.phaseUntil = now + this.p.feedbackMs;
+    this.itiUntil = now + Math.max(this.p.itiMs, this.p.feedbackMs);
     this.emit({ type: 'outcome', record });
   }
 }

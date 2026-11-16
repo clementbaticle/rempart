@@ -3,7 +3,6 @@ import { openDB } from 'idb';
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../config';
 import { normalizePseudonym, validatePlayer, type Player } from '../players/player';
-import { computeGrid } from '../calibration/grid';
 import { buildCalibrationRecord } from './calibrationRecord';
 import {
   addPlayer, deletePlayerData, latestCalibration, listCalibrations, listPlayers, openDb, saveCalibration,
@@ -35,14 +34,15 @@ describe('profil joueuse', () => {
 
 const result = {
   guard: {
-  heightPx: 400, faceTopY: 250, ankleY: 650, shoulderWidthPx: 100, pelvis: { x: 640, y: 450 },
-  shoulderCenter: { x: 640, y: 320 }, leftHand: { x: 579, y: 410 }, rightHand: { x: 701, y: 410 },
-  leftAnkle: { x: 600, y: 650 }, rightAnkle: { x: 680, y: 650 },
-},
-  spanPx: 440,
-  reachTopPx: 520,
-  left: { reachPx: 320, stepPx: 100 },
-  right: { reachPx: 340, stepPx: 120 },
+    heightPx: 400, faceTopY: 250, ankleY: 650, shoulderWidthPx: 100, pelvis: { x: 640, y: 450 },
+    shoulderCenter: { x: 640, y: 320 }, leftHand: { x: 579, y: 410 }, rightHand: { x: 701, y: 410 },
+    leftAnkle: { x: 600, y: 650 }, rightAnkle: { x: 680, y: 650 },
+  },
+};
+
+const corners = {
+  topLeft: { x: 340, y: 300 }, topRight: { x: 940, y: 300 },
+  bottomLeft: { x: 340, y: 700 }, bottomRight: { x: 940, y: 700 },
 };
 
 function record(id: string, playerId: string, date: string) {
@@ -52,23 +52,29 @@ function record(id: string, playerId: string, date: string) {
     date: new Date(date),
     statureCm: 170,
     faceToAnkleOverStature: 0.9,
+    ankleHeightCm: 8,
+    goalSizeCm: { width: 300, height: 200 },
+    gridParams: CONFIG.calibration.grid,
     video: { width: 1280, height: 720 },
+    corners,
     result,
-    grid: computeGrid(
-      { heightPx: 400, pelvisX: 640, ankleY: 650, reachTopPx: 520, reachLeftPx: 320, reachRightPx: 340 },
-      1280, 720, CONFIG.calibration.grid,
-    ),
     context: { appVersion: 'test', delegate: 'CPU', cameraPosition: 'bord-court', userAgent: 'vitest' },
   });
 }
 
 describe('enregistrement de calibration', () => {
-  it('convertit les mesures en cm', () => {
+  it('échelles, rapport de profondeur et grille calée sur la cage', () => {
     const r = record('c1', 'G1', '2026-11-16T18:00:00Z');
-    // 400 px pour 170 × 0,9 = 153 cm → 2,614 px/cm.
+    // Joueuse : 400 px pour 170 × 0,9 = 153 cm → 2,614 px/cm ; cage : 2 px/cm.
     expect(r.pxPerCm).toBeCloseTo(2.614, 3);
-    expect(r.cm.span).toBeCloseTo(168.3, 1);
-    expect(r.cm.stepLeft).toBeCloseTo(38.3, 1);
+    expect(r.goal.geometry.pxPerCm).toBe(2);
+    expect(r.depthRatio).toBeCloseTo(1.307, 3);
+    expect(r.cm.shoulderWidth).toBeCloseTo(38.3, 1);
+    // Zone 1 : centre de la cage − 125 cm, 165 cm au-dessus du sol (chevilles + 8 cm).
+    const z1 = r.grid.zones[0]!.center;
+    const s = 400 / 153;
+    expect(z1.x).toBeCloseTo(640 - 125 * s, 6);
+    expect(z1.y).toBeCloseTo(650 + 8 * s - 165 * s, 6);
     expect(r.date).toBe('2026-11-16T18:00:00.000Z');
   });
 });
