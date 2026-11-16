@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CameraFpsEstimator,
   DroppedFrameCounter,
+  RollingStats,
   FpsCounter,
   classifyStreamFit,
   fpsLevel,
@@ -47,6 +49,41 @@ describe('DroppedFrameCounter', () => {
     const d = new DroppedFrameCounter();
     [10, 11, 1, 2].forEach((n) => d.update(n));
     expect(d.droppedFrames).toBe(0);
+  });
+});
+
+describe('CameraFpsEstimator', () => {
+  it('mesure la cadence caméra même si peu d’images sont traitées', () => {
+    // Caméra à 30 i/s, mais une image traitée sur 5 (calcul lent).
+    const c = new CameraFpsEstimator(1000);
+    for (let i = 0; i <= 6; i++) c.update(i * (5000 / 30), i * 5);
+    expect(c.fps(1000)).toBeCloseTo(30, 5);
+  });
+
+  it('renvoie null sans données suffisantes', () => {
+    const c = new CameraFpsEstimator(1000);
+    expect(c.fps(0)).toBeNull();
+    c.update(0, 1);
+    expect(c.fps(0)).toBeNull();
+  });
+
+  it('repart de zéro si le compteur recule', () => {
+    const c = new CameraFpsEstimator(1000);
+    c.update(0, 100);
+    c.update(100, 103);
+    c.update(200, 1);
+    c.update(300, 4);
+    expect(c.fps(300)).toBeCloseTo(30, 5);
+  });
+});
+
+describe('RollingStats', () => {
+  it('moyenne et max sur les N dernières valeurs', () => {
+    const s = new RollingStats(3);
+    expect(s.mean).toBeNull();
+    [100, 10, 20, 30].forEach((v) => s.push(v));
+    expect(s.mean).toBeCloseTo(20);
+    expect(s.max).toBe(30);
   });
 });
 

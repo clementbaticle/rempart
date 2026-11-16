@@ -6,16 +6,28 @@ import {
   type StreamFit,
 } from '../camera/diagnostics';
 import type { TimestampSource } from '../pose/frameLoop';
+import type { PowerState } from './power';
+
+function powerLabel(p: PowerState | null): string {
+  if (!p) return 'inconnue';
+  const pct = `${Math.round(p.level * 100)} %`;
+  return p.charging ? `secteur (${pct})` : `batterie (${pct})`;
+}
 
 export interface DiagnosticData {
   videoWidth: number;
   videoHeight: number;
   /** Réglage de fréquence annoncé par la piste (peut être absent). */
   trackFrameRate: number | null;
-  videoFps: number;
+  /** i/s fournies par la caméra (null si non mesurable : pas de rVFC). */
+  cameraFps: number | null;
   detectionFps: number;
+  /** Temps de calcul d'une détection (ms), moyenne et max sur les 30 dernières. */
+  detectionMsMean: number | null;
+  detectionMsMax: number | null;
   droppedRatio: number;
   delegate: string;
+  power: PowerState | null;
   timestampSource: TimestampSource | '—';
   streamFit: StreamFit;
   screenWidth: number;
@@ -80,14 +92,26 @@ export class DiagnosticPanel {
       ['Résolution vidéo', `${d.videoWidth} × ${d.videoHeight}`],
       ['Flux', FIT_LABEL[d.streamFit], d.streamFit === 'tourné' ? 'warn' : undefined],
       ['Écran', `${d.screenWidth} × ${d.screenHeight}`],
-      ['i/s vidéo', `${d.videoFps.toFixed(1)}${d.trackFrameRate ? ` (annoncé ${d.trackFrameRate.toFixed(0)})` : ''}`],
+      [
+        'i/s caméra',
+        `${d.cameraFps === null ? '—' : d.cameraFps.toFixed(1)}${d.trackFrameRate ? ` (annoncé ${d.trackFrameRate.toFixed(0)})` : ''}`,
+      ],
       [
         'i/s détection',
         `${d.detectionFps.toFixed(1)} — ${level}`,
         level === 'bon' ? 'ok' : level === 'limite' ? 'warn' : 'err',
       ],
-      ['Images perdues', `${(d.droppedRatio * 100).toFixed(1)} %`],
+      [
+        'Calcul / image',
+        d.detectionMsMean === null
+          ? '—'
+          : `${d.detectionMsMean.toFixed(0)} ms (max ${d.detectionMsMax!.toFixed(0)})`,
+        // Au-delà de 40 ms par image, 25 i/s sont hors de portée.
+        d.detectionMsMean !== null && d.detectionMsMean > 1000 / targetFps ? 'err' : undefined,
+      ],
+      ['Images non traitées', `${(d.droppedRatio * 100).toFixed(1)} %`],
       ['Délégué', d.delegate],
+      ['Alimentation', powerLabel(d.power), d.power && !d.power.charging ? 'warn' : undefined],
       ['Horodatage', d.timestampSource],
       [
         'Position caméra',

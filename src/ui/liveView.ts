@@ -1,8 +1,10 @@
 import { CONFIG } from '../config';
 import { currentSettings, startCamera, stopCamera } from '../camera/camera';
 import {
+  CameraFpsEstimator,
   DroppedFrameCounter,
   FpsCounter,
+  RollingStats,
   classifyStreamFit,
   parseCameraPosition,
   type CameraPosition,
@@ -13,6 +15,8 @@ import { startFrameLoop, type TimestampSource } from '../pose/frameLoop';
 import { SkeletonOverlay } from './overlay';
 import { DiagnosticPanel } from './diagnosticPanel';
 import { keepScreenAwake, requestFullscreen } from './screen';
+import { watchPower, type PowerState } from './power';
+import { resolveDelegates } from '../pose/delegateChoice';
 
 function readCameraPosition(): CameraPosition {
   try {
@@ -57,13 +61,19 @@ export async function renderLiveView(root: HTMLElement): Promise<void> {
   root.querySelector('.live')!.append(panel.element);
   root.querySelector('.live__diag-toggle')!.addEventListener('click', () => panel.toggle());
 
+  let power: PowerState | null = null;
+  void watchPower((s) => {
+    power = s;
+  });
+
+  const delegateChoice = resolveDelegates(window.location.search, CONFIG.pose.delegates);
   let stream: MediaStream | null = null;
   let detector: PoseDetector;
   try {
     const cam = await startCamera(video);
     stream = cam.stream;
     status.textContent = 'Chargement du modèle de détection…';
-    detector = await createPoseDetector();
+    detector = await createPoseDetector(delegateChoice.delegates);
     status.hidden = true;
   } catch (err) {
     stopCamera(stream);
@@ -81,22 +91,28 @@ export async function renderLiveView(root: HTMLElement): Promise<void> {
   window.addEventListener('resize', layout);
   video.addEventListener('resize', layout); // dimensions du flux modifiées (rotation)
 
-  const videoFps = new FpsCounter(CONFIG.quality.fpsWindowMs);
+  const cameraFps = new CameraFpsEstimator(CONFIG.quality.fpsWindowMs);
   const detectionFps = new FpsCounter(CONFIG.quality.fpsWindowMs);
+  const detectionMs = new RollingStats(30);
   const dropped = new DroppedFrameCounter();
   let lastSource: TimestampSource | '—' = '—';
   let lastTimestamp = -Infinity;
   let poseDetected = false;
 
   startFrameLoop(video, (frame) => {
-    videoFps.tick(frame.time);
-    if (frame.presentedFrames !== null) dropped.update(frame.presentedFrames);
+    if (frame.presentedFrames !== null) {
+      dropped.update(frame.presentedFrames);
+      cameraFps.update(performance.now(), frame.presentedFrames);
+    }
     lastSource = frame.source;
     // MediaPipe exige des horodatages strictement croissants.
     const ts = Math.max(frame.time, lastTimestamp + 0.001);
     lastTimestamp = ts;
+    const t0 = performance.now();
     const result = detector.landmarker.detectForVideo(video, ts);
-    detectionFps.tick(performance.now());
+    const t1 = performance.now();
+    detectionMs.push(t1 - t0);
+    detectionFps.tick(t1);
     const pose = result.landmarks[0];
     poseDetected = !!pose && pose.length > 0;
     overlay.draw(pose);
@@ -109,10 +125,13 @@ export async function renderLiveView(root: HTMLElement): Promise<void> {
       videoWidth: video.videoWidth,
       videoHeight: video.videoHeight,
       trackFrameRate: typeof s.frameRate === 'number' ? s.frameRate : null,
-      videoFps: videoFps.fps(now),
+      cameraFps: cameraFps.fps(now),
       detectionFps: detectionFps.fps(now),
+      detectionMsMean: detectionMs.mean,
+      detectionMsMax: detectionMs.max,
       droppedRatio: dropped.droppedRatio,
-      delegate: detector.delegate,
+      delegate: `${detector.delegate}${delegateChoice.forced ? ' (forcé)' : ''}`,
+      power,
       timestampSource: lastSource,
       streamFit: classifyStreamFit(video.videoWidth, video.videoHeight, window.innerWidth, window.innerHeight),
       screenWidth: window.innerWidth,

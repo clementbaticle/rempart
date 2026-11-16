@@ -76,6 +76,65 @@ export class DroppedFrameCounter {
   }
 }
 
+/**
+ * i/s réellement fournies par la caméra, d'après le compteur `presentedFrames`
+ * (indépendant du temps de calcul : compte aussi les images non traitées).
+ */
+export class CameraFpsEstimator {
+  private readonly samples: { t: number; frames: number }[] = [];
+
+  constructor(private readonly windowMs: number) {
+    if (!(windowMs > 0)) throw new Error('windowMs doit être > 0');
+  }
+
+  update(t: number, presentedFrames: number): void {
+    const last = this.samples[this.samples.length - 1];
+    if (last && presentedFrames < last.frames) this.samples.length = 0; // flux redémarré
+    this.samples.push({ t, frames: presentedFrames });
+    this.prune(t);
+  }
+
+  /** i/s caméra sur la fenêtre ; `null` si pas assez de données. */
+  fps(now: number): number | null {
+    this.prune(now);
+    const n = this.samples.length;
+    if (n < 2) return null;
+    const a = this.samples[0]!;
+    const b = this.samples[n - 1]!;
+    const span = b.t - a.t;
+    return span > 0 ? ((b.frames - a.frames) * 1000) / span : null;
+  }
+
+  private prune(now: number): void {
+    const limit = now - this.windowMs;
+    // Garde au moins un échantillon antérieur à la fenêtre pour couvrir les cadences lentes.
+    while (this.samples.length > 2 && this.samples[1]!.t < limit) this.samples.shift();
+  }
+}
+
+/** Moyenne et maximum glissants sur les N dernières valeurs (ex. temps de calcul en ms). */
+export class RollingStats {
+  private readonly values: number[] = [];
+
+  constructor(private readonly size: number) {
+    if (!(size > 0)) throw new Error('size doit être > 0');
+  }
+
+  push(v: number): void {
+    this.values.push(v);
+    if (this.values.length > this.size) this.values.shift();
+  }
+
+  get mean(): number | null {
+    if (this.values.length === 0) return null;
+    return this.values.reduce((s, v) => s + v, 0) / this.values.length;
+  }
+
+  get max(): number | null {
+    return this.values.length === 0 ? null : Math.max(...this.values);
+  }
+}
+
 export type Orientation = 'paysage' | 'portrait' | 'carré';
 
 export function orientationOf(width: number, height: number): Orientation {

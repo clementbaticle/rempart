@@ -17,11 +17,13 @@ function assetUrl(path: string): string {
  * Charge PoseLandmarker lite (mode VIDEO) à partir des fichiers auto-hébergés,
  * en essayant le GPU puis le CPU.
  */
-export async function createPoseDetector(): Promise<PoseDetector> {
+export async function createPoseDetector(
+  delegates: readonly Delegate[] = CONFIG.pose.delegates,
+): Promise<PoseDetector> {
   const fileset = await FilesetResolver.forVisionTasks(assetUrl(CONFIG.pose.wasmPath), false);
   const p = CONFIG.pose;
   let lastError: unknown = null;
-  for (const delegate of p.delegates) {
+  for (const delegate of delegates) {
     try {
       const landmarker = await PoseLandmarker.createFromOptions(fileset, {
         baseOptions: { modelAssetPath: assetUrl(p.modelPath), delegate },
