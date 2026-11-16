@@ -15,11 +15,13 @@
     "icons": "pwa-assets-generator"
   },
   "dependencies": {
-    "@mediapipe/tasks-vision": "^1.2.3"
+    "@mediapipe/tasks-vision": "^1.2.3",
+    "idb": "^8.0.4"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "@vite-pwa/assets-generator": "^2.0.0",
+    "fake-indexeddb": "^6.2.8",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vite-plugin-pwa": "^2.0.0",
