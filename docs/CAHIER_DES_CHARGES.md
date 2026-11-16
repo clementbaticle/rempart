@@ -43,22 +43,24 @@ PoseLandmarker (33 points). Effecteurs :
 
 ## 4. Calibration (à chaque séance)
 
+La grille est calée sur la **vraie cage** (3 m × 2 m), filmée de face par la tablette placée dans l'axe de la cage.
+
 0. **Profil** (créé une fois) : pseudonyme, catégorie, poste, latéralité et **taille réelle (cm)**. Aucun nom dans l'app (section 11).
-1. **Cadrage** : la joueuse doit être entièrement visible (tête et pieds). Indicateur vert/rouge et consignes (reculer, s'approcher, se décaler).
-2. **Posture de garde** (2 s, immobile) : taille apparente (visage → chevilles), largeur d'épaules, centre du bassin, niveau des chevilles.
-3. **Envergure** (2 s, bras écartés à l'horizontale).
-4. **Bras levés** (2 s) : portée haute.
-5. **Pas à gauche** puis **pas à droite** (2 s chacun, bras écartés) : portée latérale maximale de chaque côté (main la plus éloignée par rapport au centre du bassin en garde) et longueur du pas.
-6. Calcul de la **grille de 12 zones (4 colonnes × 3 rangées)** proportionnée à la joueuse, symétrique et centrée sur le bassin, **sans colonne centrale** (une cible sur le corps se toucherait sans bouger) : deux colonnes de chaque côté, la proche à 50 % et la lointaine à 90 % (paramétrables) de la portée latérale moyenne des deux côtés ; zones numérotées de 1 à 12, de gauche à droite puis de haut en bas (vue miroir) ; rangée haute à la même fraction de la portée bras levés ; rangée basse au niveau des chevilles ; rangée du milieu à mi-hauteur. Cibles de diamètre proportionnel à la taille apparente. Alerte si une cible sort de l'image. Les portées gauche et droite sont enregistrées séparément (asymétrie).
-7. **Échelle** : taille apparente rapportée à la taille réelle (pixels par cm, approximation : le repère haut est le visage, pas le sommet du crâne) ; permet d'exprimer les mesures en cm.
-8. Sauvegarde de la calibration (horodatée) et rappel de la précédente pour vérifier une distance comparable (écart de taille apparente > 10 % → alerte « trépied pas à la même distance »).
+1. **Cage** (une fois par installation du trépied) : l'entraîneur touche à l'écran les **4 coins de la cage** (pied et haut de chaque poteau, dans n'importe quel ordre). Les coins sont mémorisés sur l'appareil ; si le trépied n'a pas bougé, il suffit de les confirmer. Contrôle de cohérence (rapport largeur / hauteur proche de 3 / 2). Échelle de la cage : pixels par cm (3 m de large, 2 m de haut).
+2. **Cadrage** : la joueuse, dans sa cage, doit être entièrement visible (tête et pieds). Indicateur vert/rouge et consignes (reculer, s'approcher, se décaler).
+3. **Posture de garde** (2 s, immobile, garde habituelle) : taille apparente (visage → chevilles), largeur d'épaules, centre du bassin, niveau des chevilles, position des mains et des chevilles (zones de garde).
+4. **Échelle de la joueuse** : taille apparente rapportée à la taille réelle (pixels par cm ; approximation : le repère haut est le visage, pas le sommet du crâne).
+5. **Grille de 12 zones (4 colonnes × 3 rangées)**, **sans colonne centrale** (une cible sur le corps se toucherait sans bouger), à des **positions réelles dans la cage** : colonnes à 60 cm du centre et à 25 cm à l'intérieur de chaque poteau (± 125 cm) ; rangées à 40 cm, 1 m et 1,65 m du sol ; cibles de 30 cm de diamètre (paramétrables). Zones numérotées de 1 à 12, de gauche à droite puis de haut en bas (vue miroir).
+   - **Parallaxe** : la gardienne se tient devant sa ligne, donc plus près de la caméra que la cage. Les cibles sont placées à leur position réelle **ramenée au plan de la gardienne** : centre horizontal = centre de la cage à l'image, sol = niveau de ses chevilles (+ 8 cm), distances converties avec l'échelle de la joueuse. Toucher la cible « du poteau » à l'écran correspond ainsi à aller réellement au poteau. Rapport échelle joueuse / échelle cage enregistré (contrôle : la joueuse doit être devant la cage).
+   - Alertes : cible hors de l'image ; cible chevauchant une zone de garde.
+6. Sauvegarde de la calibration (horodatée) et rappel de la précédente pour vérifier une distance comparable : écart de taille de la cage à l'image > 10 % → alerte « trépied pas à la même distance ».
 
 ## 5. Déroulé d'un essai (cœur scientifique)
 
 La garde d'une gardienne n'est pas statique (petits rebonds, mains qui bougent) : les règles ci-dessous distinguent un vrai départ d'un balancement.
 
-1. **Position de départ** : l'essai ne commence que si les deux mains sont dans leur « zone de garde » pendant 300 ms (présence, sans exigence d'immobilité). Zone de garde = cercle autour de la position de chaque main **par rapport au centre des épaules**, mesurée pendant la posture de garde de la calibration (sa garde habituelle) ; elle suit donc la joueuse si elle se décale. Alerte à la calibration si une cible chevauche une zone de garde.
-2. **Avant-période aléatoire** : 800 à 2 000 ms (uniforme), pour empêcher d'anticiper le moment d'apparition. Les avant-périodes font partie de la séquence pré-tirée (graine).
+1. **Position de départ** : l'essai ne commence que si les deux mains sont dans leur « zone de garde » pendant 150 ms (présence, sans exigence d'immobilité). Zone de garde = cercle autour de la position de chaque main **par rapport au centre des épaules**, mesurée pendant la posture de garde de la calibration (sa garde habituelle) ; elle suit donc la joueuse si elle se décale. Alerte à la calibration si une cible chevauche une zone de garde.
+2. **Avant-période aléatoire** : 600 à 1 500 ms (uniforme), pour empêcher d'anticiper le moment d'apparition. Les avant-périodes font partie de la séquence pré-tirée (graine).
    - **Faux départ** : mouvement (critère du point 4) par rapport à une référence **glissante** (moyenne des 500 dernières ms) pendant l'avant-période → essai annulé et rejoué (nouvelle avant-période tirée d'un générateur séparé, pour ne pas décaler la séquence) ; le nombre de faux départs est enregistré avec l'essai.
 3. **Apparition du stimulus** : l'horodatage d'apparition est pris dans le `requestAnimationFrame` où la cible est dessinée (`performance.now()`, plus l'horodatage du rafraîchissement pour contrôle). Biais connu et constant pour un même appareil : affichage réel ≈ 1 rafraîchissement plus tard, latence de la caméra.
 4. **Détection**, image par image (`requestVideoFrameCallback` ; enregistrer `metadata.captureTime` si disponible, sinon `expectedDisplayTime`, et noter quelle source a été utilisée) :
@@ -71,7 +73,7 @@ La garde d'une gardienne n'est pas statique (petits rebonds, mains qui bougent) 
    - **Trajectoires** : positions des mains, pieds, épaules et bassin enregistrées image par image (coordonnées seulement, aucune image), de l'avant-période à la fin de la réponse, pour pouvoir recalculer les TR avec un autre seuil. **Indice de balancement** par essai : amplitude moyenne des mouvements des mains (par rapport aux épaules) pendant l'avant-période, en proportion de la taille apparente.
 5. **Issue** de l'essai : `hit` (bonne cible, bon effecteur), `wrong_effector`, `wrong_zone`, `miss` (délai dépassé), `commission` (mouvement sur un no-go), `correct_rejection` (no-go respecté), `anticipation` (initiation < 150 ms après le stimulus).
 6. **Retour** à la joueuse : visuel bref (flash vert / rouge) et son facultatif, **après** la réponse uniquement.
-7. Intervalle avant l'essai suivant : 1 000 ms + retour en position de garde.
+7. Intervalle avant l'essai suivant : 300 ms (le retour visuel de 300 ms s'y déroule) + retour en position de garde. Environ 2 s entre deux cibles. **Ces délais doivent être figés avant la collecte des données du mémoire.**
 
 Délais par défaut (paramétrables) : réponse 2 000 ms ; fenêtre no-go 1 500 ms.
 
@@ -106,7 +108,7 @@ Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), doub
 
 - `players` : id pseudonyme (G1…G5, C1…), poste, catégorie (pro / CF / réserve / champ), latéralité, taille réelle (cm), actif.
 - `sessions` : id, player_id, date-heure, mode (test / train), version de batterie, graine, appareil (user agent, dimensions vidéo), i/s moyen, % images perdues, source de l'horodatage, calibration_id, notes.
-- `calibrations` : id, player_id, date, dimensions vidéo, mesures (taille apparente, épaules, bassin, chevilles, envergure, portée haute, portées et pas gauche / droite, échelle px/cm), grille calculée, contexte (version de l'app, délégué, position de caméra).
+- `calibrations` : id, player_id, date, dimensions vidéo, coins de la cage et échelle de la cage, mesures de garde (taille apparente, épaules, bassin, chevilles, mains), échelle de la joueuse (px/cm), rapport des échelles, grille calculée, contexte (version de l'app, délégué, position de caméra).
 - `trials` : session_id, bloc, n° d'essai, mode, zone (1-12), stimulus (couleur / type), go ou no-go, effecteur attendu, effecteur utilisé, zone touchée, avant-période (ms), t_stimulus (et horodatage du rafraîchissement), t_initiation, critère d'initiation, t_touche, TR (ms), temps de mouvement (ms), temps total (ms), issue, nombre de faux départs, niveau de difficulté, qualité (visibilité moyenne, images perdues pendant l'essai, indice de balancement), trajectoires.
 - Les `sessions` portent aussi : statut (terminée / interrompue), délégué, résolution, position de caméra, version de l'app.
 
@@ -149,7 +151,7 @@ Export CSV : un fichier `trials` en format long avec les colonnes de session ré
 ## 12. Étapes de développement (chacune validée avant la suivante)
 
 1. **Socle** : projet Vite + TS + PWA, caméra en miroir, squelette MediaPipe dessiné par-dessus, compteur d'i/s. Déploiement GitHub Pages. → *Test sur l'iPad.*
-2. **Profils, calibration et grille** : profils joueuses (pseudonyme + taille), cadrage, posture, envergure, bras levés, pas gauche / droit, grille de 12 zones affichée ; tables IndexedDB `players` et `calibrations`.
+2. **Profils, calibration et grille** : profils joueuses (pseudonyme + taille), coins de la cage, cadrage, garde, grille de 12 zones calée sur la cage ; tables IndexedDB `players` et `calibrations`.
 3. **Mode Classique** : boucle d'essai complète (position de départ, avant-période, horodatages, issues), tables IndexedDB `sessions` et `trials`.
 4. **Go / no-go et Bon segment**, mode Test à graine, écran de résultats, export CSV / JSON.
 5. **Habillage** (couleurs TMVH, sons, profils), mode Entraînement adaptatif. → *Test au gymnase et étude de fiabilité.*
