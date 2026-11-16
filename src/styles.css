@@ -521,3 +521,111 @@ body {
   color: var(--ex-text);
   border-color: var(--ex-text-muted);
 }
+
+/* ---------- Série d'essais (neutre) ---------- */
+.trial__flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 0 solid transparent;
+}
+
+.trial__flash.is-ok {
+  border: 18px solid var(--ex-ok);
+}
+
+.trial__flash.is-error {
+  border: 18px solid var(--ex-error);
+}
+
+.trial__counter {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  left: max(1rem, env(safe-area-inset-left));
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: var(--ex-panel);
+  color: var(--ex-text-muted);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trial__counter:empty,
+.trial__message:empty {
+  display: none;
+}
+
+.trial__message {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.8rem 1.6rem;
+  border-radius: 16px;
+  background: var(--ex-panel);
+  font-size: clamp(1.8rem, 4.5vw, 3rem);
+  font-weight: 800;
+  text-align: center;
+}
+
+.trial__stop {
+  position: absolute;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  right: max(1rem, env(safe-area-inset-right));
+  font: inherit;
+  font-size: 1.1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 2px solid var(--ex-text-muted);
+  background: var(--ex-panel);
+  color: var(--ex-text);
+}
+
+.trial__stop[hidden] {
+  display: none;
+}
+
+.trial__summary {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 90%);
+  padding: 1.2rem 1.5rem;
+  border-radius: 16px;
+  background: var(--ex-panel);
+}
+
+.trial__summary[hidden] {
+  display: none;
+}
+
+.trial__summary h2 {
+  margin: 0 0 0.8rem;
+}
+
+.trial__summary dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 1.2rem;
+  margin: 0;
+}
+
+.trial__summary dt {
+  color: var(--ex-text-muted);
+}
+
+.trial__summary dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trial__warn {
+  margin: 0.8rem 0 0;
+  color: var(--ex-warning);
+}
+
+.trial__warn[hidden] {
+  display: none;
+}

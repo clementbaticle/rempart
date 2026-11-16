@@ -10,11 +10,14 @@ import type { Player } from '../players/player';
 import { buildCalibrationRecord, type CalibrationRecord } from '../storage/calibrationRecord';
 import { CameraStage } from './cameraStage';
 import { drawGrid } from './gridDraw';
+import { guardOverlaps } from '../trial/zones';
 
 export interface CalibrationActions {
   previous: CalibrationRecord | undefined;
   save: (record: CalibrationRecord) => Promise<void>;
   onExit: () => void;
+  /** Lance la série d'essais avec la calibration enregistrée. */
+  onStart: (record: CalibrationRecord) => void;
 }
 
 function newId(): string {
@@ -124,6 +127,18 @@ export function renderCalibration(root: HTMLElement, player: Player, a: Calibrat
     if (!r.grid.fits) {
       alerts.push(`Cibles hors de l’image (zones ${r.grid.overflowing.join(', ')}) : reculez le trépied et recommencez.`);
     }
+    const overlaps = guardOverlaps(
+      r.measures.guard,
+      r.grid,
+      CONFIG.trial.guardRadiusRatio * r.measures.guard.heightPx,
+      CONFIG.trial.hitToleranceFactor,
+    );
+    if (overlaps.length) {
+      alerts.push(
+        `Cible${overlaps.length > 1 ? 's' : ''} ${overlaps.join(', ')} trop proche${overlaps.length > 1 ? 's' : ''} ` +
+          'de la position de garde (zone trop facile) : recommencez avec votre garde habituelle, mains plus hautes.',
+      );
+    }
     if (a.previous) {
       const change = apparentSizeChange(
         { heightPx: r.measures.guard.heightPx, videoHeight: r.video.height },
@@ -161,12 +176,17 @@ export function renderCalibration(root: HTMLElement, player: Player, a: Calibrat
       box.hidden = true;
     });
     const saveBtn = box.querySelector<HTMLButtonElement>('[data-action="save"]')!;
+    let saved: CalibrationRecord | null = null;
     saveBtn.addEventListener('click', async () => {
+      if (saved) return a.onStart(saved); // déjà enregistrée : lancer la série
       if (!record) return;
       saveBtn.disabled = true;
       try {
         await a.save(record);
-        saveBtn.textContent = 'Enregistrée ✓';
+        saved = record;
+        saveBtn.textContent = 'Commencer : Classique';
+        saveBtn.disabled = false;
+        box.querySelector<HTMLButtonElement>('[data-action="redo"]')!.hidden = true;
       } catch (err) {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Échec — réessayer';

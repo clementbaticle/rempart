@@ -45,10 +45,31 @@ export interface PoseFrame {
 
 export interface CameraStageOptions {
   diagnosticVisible?: boolean;
+  /** Dessiner le squelette (par défaut : oui). */
+  skeleton?: boolean;
   /** Appelé après chaque détection, avant le dessin. */
   onPose?: (p: PoseFrame) => void;
   /** Dessin supplémentaire par-dessus le squelette (contexte en pixels CSS). */
   drawExtra?: (ctx: CanvasRenderingContext2D, videoRect: Rect, video: { width: number; height: number }) => void;
+}
+
+/** Calque de dessin supplémentaire, aligné sur la vidéo (pixels CSS). */
+export interface Layer {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  /** Rectangle d'affichage de la vidéo. */
+  rect: Rect;
+  clear(): void;
+}
+
+/** Statistiques de séance (section 8). */
+export interface StageStats {
+  meanDetectionFps: number | null;
+  droppedRatio: number;
+  timestampSource: string;
+  resolution: string;
+  videoWidth: number;
+  videoHeight: number;
 }
 
 export class CameraStage {
@@ -64,6 +85,11 @@ export class CameraStage {
   private readonly cleanups: (() => void)[] = [];
   private cameraPositionValue = readCameraPosition();
   private readonly delegateChoice = resolveDelegates(window.location.search, CONFIG.pose.delegates);
+  private readonly layers: Layer[] = [];
+  private relayout: () => void = () => {};
+  private statsGetter: () => StageStats = () => ({
+    meanDetectionFps: null, droppedRatio: 0, timestampSource: '—', resolution: '—', videoWidth: 0, videoHeight: 0,
+  });
 
   constructor(private readonly opts: CameraStageOptions = {}) {
     this.element = document.createElement('div');
@@ -93,6 +119,27 @@ export class CameraStage {
 
   get delegate(): string {
     return this.detector?.delegate ?? '—';
+  }
+
+  stats(): StageStats {
+    return this.statsGetter();
+  }
+
+  /** Ajoute un calque au-dessus du squelette (ex. cibles dessinées dans requestAnimationFrame). */
+  addLayer(): Layer {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'live__overlay';
+    this.element.querySelector('.live__stage')!.append(canvas);
+    const ctx = canvas.getContext('2d')!;
+    const layer: Layer = {
+      canvas,
+      ctx,
+      rect: { x: 0, y: 0, width: 0, height: 0 },
+      clear: () => ctx.clearRect(0, 0, canvas.width, canvas.height),
+    };
+    this.layers.push(layer);
+    this.relayout();
+    return layer;
   }
 
   /** Démarre caméra et détection ; renvoie false (message affiché) en cas d'échec. */
@@ -133,7 +180,17 @@ export class CameraStage {
       const box = stage.getBoundingClientRect();
       rect = fitContain(video.videoWidth, video.videoHeight, box.width, box.height);
       overlay.resize(box.width, box.height, rect);
+      const dpr = window.devicePixelRatio || 1;
+      for (const l of this.layers) {
+        l.canvas.width = Math.round(box.width * dpr);
+        l.canvas.height = Math.round(box.height * dpr);
+        l.canvas.style.width = `${box.width}px`;
+        l.canvas.style.height = `${box.height}px`;
+        l.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        l.rect = rect;
+      }
     };
+    this.relayout = layout;
     layout();
     window.addEventListener('resize', layout);
     video.addEventListener('resize', layout); // dimensions du flux modifiées (rotation)
@@ -149,6 +206,23 @@ export class CameraStage {
     let lastSource: TimestampSource | '—' = '—';
     let lastTimestamp = -Infinity;
     let poseDetected = false;
+    let detections = 0;
+    let firstDetection: number | null = null;
+    let lastDetection = 0;
+    const resolutionLabel = resolutionChoice.forced
+      ? `${resolutionChoice.resolution.width}x${resolutionChoice.resolution.height}`
+      : 'défaut';
+    this.statsGetter = () => ({
+      meanDetectionFps:
+        firstDetection !== null && lastDetection > firstDetection
+          ? ((detections - 1) * 1000) / (lastDetection - firstDetection)
+          : null,
+      droppedRatio: dropped.droppedRatio,
+      timestampSource: lastSource,
+      resolution: resolutionLabel,
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+    });
 
     this.stopLoop = startFrameLoop(video, (frame) => {
       if (frame.presentedFrames !== null) {
@@ -164,10 +238,14 @@ export class CameraStage {
       const t1 = performance.now();
       detectionMs.push(t1 - t0);
       detectionFps.tick(t1);
+      detections += 1;
+      firstDetection ??= t1;
+      lastDetection = t1;
       const pose = result.landmarks[0];
       poseDetected = !!pose && pose.length > 0;
       this.opts.onPose?.({ frame, landmarks: pose, videoWidth: video.videoWidth, videoHeight: video.videoHeight });
-      overlay.draw(pose);
+      if (this.opts.skeleton === false) overlay.clear();
+      else overlay.draw(pose);
       this.opts.drawExtra?.(overlay.context, rect, { width: video.videoWidth, height: video.videoHeight });
     });
 

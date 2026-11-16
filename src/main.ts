@@ -5,8 +5,9 @@ import { renderHome } from './ui/home';
 import { renderLiveView } from './ui/liveView';
 import { renderPlayerForm } from './ui/playerForm';
 import { renderCalibration } from './ui/calibrationView';
+import { renderTrials } from './ui/trialView';
 import {
-  addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, updatePlayer, type Db,
+  addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, saveSession, updatePlayer, type Db,
 } from './storage/db';
 
 applyTheme();
@@ -67,6 +68,13 @@ async function showCalibration(db: Db, playerId: string): Promise<void> {
       previous,
       save: (record) => saveCalibration(db, record),
       onExit: () => void showHome(db),
+      onStart: (record) =>
+        go(() =>
+          renderTrials(root, player, record, {
+            save: (session, trials) => saveSession(db, session, trials),
+            onExit: () => void showHome(db),
+          }),
+        ),
     }),
   );
 }
