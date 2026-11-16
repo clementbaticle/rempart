@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { openDB } from 'idb';
 import { describe, expect, it } from 'vitest';
 import { CONFIG } from '../config';
 import { normalizePseudonym, validatePlayer, type Player } from '../players/player';
@@ -6,8 +7,10 @@ import { computeGrid } from '../calibration/grid';
 import { buildCalibrationRecord } from './calibrationRecord';
 import {
   addPlayer, deletePlayerData, latestCalibration, listCalibrations, listPlayers, openDb, saveCalibration,
-  updatePlayer,
+  updatePlayer, saveSession, listSessions, listTrials,
 } from './db';
+import { toTrialRow, type SessionRecord } from './sessionRecord';
+import type { TrialRecord } from '../trial/trialMachine';
 
 const LIMITS = CONFIG.player;
 
@@ -115,6 +118,42 @@ describe('IndexedDB', () => {
     await expect(updatePlayer(db, 'G3', player('G2'))).rejects.toThrow(/existe déjà/);
     expect((await listPlayers(db)).map((p) => p.id)).toEqual(['G2', 'G3']);
     expect(await listCalibrations(db, 'G3')).toHaveLength(1);
+    db.close();
+  });
+
+  it('migration v1 → v2 : les profils et calibrations existants sont conservés', async () => {
+    const name = `test-${Math.random()}`;
+    const v1 = await openDB(name, 1, {
+      upgrade(db) {
+        db.createObjectStore('players', { keyPath: 'id' });
+        db.createObjectStore('calibrations', { keyPath: 'id' }).createIndex('by_player', 'playerId');
+      },
+    });
+    await v1.put('players', player('G1'));
+    await v1.put('calibrations', record('a', 'G1', '2026-11-10T10:00:00Z'));
+    v1.close();
+    const db = await openDb(name);
+    expect((await listPlayers(db)).map((p) => p.id)).toEqual(['G1']);
+    expect(await listCalibrations(db, 'G1')).toHaveLength(1);
+    expect(await listSessions(db, 'G1')).toEqual([]);
+    db.close();
+  });
+
+  it('séances et essais : enregistrement, renommage, suppression', async () => {
+    const db = await openDb(`test-${Math.random()}`);
+    await addPlayer(db, player('G1'));
+    const session = { id: 's1', playerId: 'G1', date: '2026-11-16T10:00:00Z' } as SessionRecord;
+    const trial = (index: number) => ({ index, outcome: 'hit', rtMs: 300 }) as TrialRecord;
+    await saveSession(db, session, [trial(2), trial(1)].map((t) => toTrialRow('s1', 'G1', t)));
+    expect((await listTrials(db, 's1')).map((t) => t.id)).toEqual(['s1:1', 's1:2']);
+
+    await updatePlayer(db, 'G1', player('G9'));
+    expect((await listSessions(db, 'G9')).map((x) => x.id)).toEqual(['s1']);
+    expect((await listTrials(db, 's1')).every((t) => t.playerId === 'G9')).toBe(true);
+
+    await deletePlayerData(db, 'G9');
+    expect(await listSessions(db, 'G9')).toEqual([]);
+    expect(await listTrials(db, 's1')).toEqual([]);
     db.close();
   });
 });
