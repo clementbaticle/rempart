@@ -27,3 +27,14 @@ Horodatage : `captureTime` dans tous les cas.
   comparer `?res=640` / défaut et `?delegate=CPU` / défaut.
 
 ### Test iPad (9e génération) — à venir
+
+## Étape 2 — Profils, calibration et grille (v0.2.0)
+
+### 16/11/2026 — domicile, ordinateur (Asus, Chrome, CPU forcé, secteur)
+- Calibration menée jusqu'au bout sans blocage ; consignes compréhensibles.
+- 1er essai : cibles des zones 1-2-3 (rangée haute) hors de l'image → alerte affichée, calibration refaite.
+- Mesures (cm, approx.) : épaules 35 ; envergure 170 ; portée haute 212 ; portée gauche / droite 174 / 184 ;
+  pas gauche / droit 83 / 93.
+- Cohérence interne : demi-envergure + pas ≈ portée latérale (85 + 83 = 168 vs 174 ; 85 + 93 = 178 vs 184).
+- Zones jugées atteignables. Alerte de distance déclenchée correctement.
+- Envergure non vérifiée au mètre.
