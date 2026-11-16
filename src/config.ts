@@ -95,6 +95,43 @@ export const CONFIG = {
     distanceAlertRatio: 0.1,
   },
 
+  /**
+   * Déroulé d'un essai (section 5). PARAMÈTRES DE MESURE : toute modification doit être
+   * signalée et notée dans le journal des tests.
+   */
+  trial: {
+    /** Zone de garde : rayon autour de la position de garde de chaque main (proportion de la taille apparente). */
+    guardRadiusRatio: 0.12,
+    /** Présence des deux mains dans la zone de garde exigée avant l'avant-période (ms). */
+    guardPresenceMs: 300,
+    foreperiodMinMs: 800,
+    foreperiodMaxMs: 2000,
+    /** Référence de position : moyenne sur cette durée avant l'apparition (ms). */
+    baselineMs: 300,
+    /** Référence glissante pour détecter un faux départ pendant l'avant-période (ms). */
+    falseStartWindowMs: 500,
+    /** Seuil d'initiation (proportion de la taille apparente). */
+    initiationThresholdRatio: 0.05,
+    /** Délai de réponse (ms). */
+    responseMs: 2000,
+    /** Fenêtre no-go (ms), utilisée à l'étape 4. */
+    noGoWindowMs: 1500,
+    /** Initiation plus précoce que ce délai après l'apparition = anticipation (ms). */
+    anticipationMs: 150,
+    /** Durée du retour visuel (ms). */
+    feedbackMs: 300,
+    /** Intervalle avant l'essai suivant (ms), puis retour en garde. */
+    itiMs: 1000,
+    /** Multiplicateur du rayon de cible pour la détection de touche. */
+    hitToleranceFactor: 1,
+    /** Bornes des TR retenus dans les statistiques (section 9). */
+    validRtMinMs: 150,
+    validRtMaxMs: 1500,
+    /** Bloc Classique : nombre de passages par zone, répétitions consécutives maximales. */
+    classicRepeatsPerZone: 4,
+    maxSameZoneInARow: 2,
+  },
+
   player: {
     minHeightCm: 120,
     maxHeightCm: 220,
