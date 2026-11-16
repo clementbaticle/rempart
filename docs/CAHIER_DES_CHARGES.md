@@ -43,11 +43,15 @@ PoseLandmarker (33 points). Effecteurs :
 
 ## 4. Calibration (à chaque séance)
 
-1. **Cadrage** : la joueuse doit être entièrement visible (tête et pieds). Indicateur vert/rouge et consignes de recul.
-2. **Posture de base** (2 s, immobile, position de garde) : mesure de la hauteur (tête → chevilles), largeur d'épaules, position du bassin.
-3. **Envergure** (2 s, bras écartés) : portée latérale.
-4. Calcul de la **grille 3 × 3** proportionnée à la joueuse : rangée haute = portée bras levés, rangée basse = niveau chevilles, colonnes latérales = envergure + un pas (facteur paramétrable). Cibles de taille constante en proportion de la taille de la joueuse.
-5. Sauvegarde de la calibration (horodatée) et rappel de la précédente pour vérifier une distance comparable (écart de taille apparente > 10 % → alerte « trépied pas à la même distance »).
+0. **Profil** (créé une fois) : pseudonyme, catégorie, poste, latéralité et **taille réelle (cm)**. Aucun nom dans l'app (section 11).
+1. **Cadrage** : la joueuse doit être entièrement visible (tête et pieds). Indicateur vert/rouge et consignes (reculer, s'approcher, se décaler).
+2. **Posture de garde** (2 s, immobile) : taille apparente (visage → chevilles), largeur d'épaules, centre du bassin, niveau des chevilles.
+3. **Envergure** (2 s, bras écartés à l'horizontale).
+4. **Bras levés** (2 s) : portée haute.
+5. **Pas à gauche** puis **pas à droite** (2 s chacun, bras écartés) : portée latérale maximale de chaque côté (main la plus éloignée par rapport au centre du bassin en garde) et longueur du pas.
+6. Calcul de la **grille 3 × 3** proportionnée à la joueuse, symétrique et centrée sur le bassin : colonnes latérales à une fraction (90 % par défaut) de la portée latérale moyenne des deux côtés ; rangée haute à la même fraction de la portée bras levés ; rangée basse au niveau des chevilles ; rangée du milieu à mi-hauteur. Cibles de diamètre proportionnel à la taille apparente. Alerte si une cible sort de l'image. Les portées gauche et droite sont enregistrées séparément (asymétrie).
+7. **Échelle** : taille apparente rapportée à la taille réelle (pixels par cm, approximation : le repère haut est le visage, pas le sommet du crâne) ; permet d'exprimer les mesures en cm.
+8. Sauvegarde de la calibration (horodatée) et rappel de la précédente pour vérifier une distance comparable (écart de taille apparente > 10 % → alerte « trépied pas à la même distance »).
 
 ## 5. Déroulé d'un essai (cœur scientifique)
 
@@ -92,9 +96,9 @@ Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), doub
 
 ## 8. Modèle de données
 
-- `players` : id pseudonyme (G1…G5, C1…), poste, catégorie (pro / CF / réserve / champ), latéralité, actif.
+- `players` : id pseudonyme (G1…G5, C1…), poste, catégorie (pro / CF / réserve / champ), latéralité, taille réelle (cm), actif.
 - `sessions` : id, player_id, date-heure, mode (test / train), version de batterie, graine, appareil (user agent, dimensions vidéo), i/s moyen, % images perdues, source de l'horodatage, calibration_id, notes.
-- `calibrations` : id, player_id, date, mesures (taille apparente, épaules, envergure), grille calculée.
+- `calibrations` : id, player_id, date, dimensions vidéo, mesures (taille apparente, épaules, bassin, chevilles, envergure, portée haute, portées et pas gauche / droite, échelle px/cm), grille calculée, contexte (version de l'app, délégué, position de caméra).
 - `trials` : session_id, bloc, n° d'essai, mode, zone (1-9), stimulus (couleur / type), go ou no-go, effecteur attendu, effecteur utilisé, avant-période (ms), t_stimulus, t_initiation, t_touche, TR (ms), temps de mouvement (ms), temps total (ms), issue, niveau de difficulté, qualité (visibilité moyenne, images perdues pendant l'essai).
 
 Export CSV : un fichier `trials` en format long avec les colonnes de session répétées (prêt pour R / Python), plus un résumé par séance (TR médian, écart interquartile, % réussite, % commissions, % anticipations).
@@ -136,7 +140,7 @@ Export CSV : un fichier `trials` en format long avec les colonnes de session ré
 ## 12. Étapes de développement (chacune validée avant la suivante)
 
 1. **Socle** : projet Vite + TS + PWA, caméra en miroir, squelette MediaPipe dessiné par-dessus, compteur d'i/s. Déploiement GitHub Pages. → *Test sur l'iPad.*
-2. **Calibration et grille** : cadrage, posture, envergure, grille 3 × 3 affichée.
-3. **Mode Classique** : boucle d'essai complète (position de départ, avant-période, horodatages, issues), stockage IndexedDB.
+2. **Profils, calibration et grille** : profils joueuses (pseudonyme + taille), cadrage, posture, envergure, bras levés, pas gauche / droit, grille 3 × 3 affichée ; tables IndexedDB `players` et `calibrations`.
+3. **Mode Classique** : boucle d'essai complète (position de départ, avant-période, horodatages, issues), tables IndexedDB `sessions` et `trials`.
 4. **Go / no-go et Bon segment**, mode Test à graine, écran de résultats, export CSV / JSON.
 5. **Habillage** (couleurs TMVH, sons, profils), mode Entraînement adaptatif. → *Test au gymnase et étude de fiabilité.*
