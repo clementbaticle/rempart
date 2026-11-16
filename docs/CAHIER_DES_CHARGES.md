@@ -55,12 +55,20 @@ PoseLandmarker (33 points). Effecteurs :
 
 ## 5. Déroulé d'un essai (cœur scientifique)
 
-1. **Position de départ** : l'essai ne commence que si les deux poignets sont dans la « zone de garde » (devant le buste) et stables 300 ms.
-2. **Avant-période aléatoire** : 800 à 2 000 ms (uniforme), pour empêcher d'anticiper le moment d'apparition.
-3. **Apparition du stimulus** : l'horodatage d'apparition est pris dans le `requestAnimationFrame` où la cible est dessinée (`performance.now()`).
+La garde d'une gardienne n'est pas statique (petits rebonds, mains qui bougent) : les règles ci-dessous distinguent un vrai départ d'un balancement.
+
+1. **Position de départ** : l'essai ne commence que si les deux mains sont dans leur « zone de garde » pendant 300 ms (présence, sans exigence d'immobilité). Zone de garde = cercle autour de la position de chaque main **par rapport au centre des épaules**, mesurée pendant la posture de garde de la calibration (sa garde habituelle) ; elle suit donc la joueuse si elle se décale. Alerte à la calibration si une cible chevauche une zone de garde.
+2. **Avant-période aléatoire** : 800 à 2 000 ms (uniforme), pour empêcher d'anticiper le moment d'apparition. Les avant-périodes font partie de la séquence pré-tirée (graine).
+   - **Faux départ** : mouvement (critère du point 4) par rapport à une référence **glissante** (moyenne des 500 dernières ms) pendant l'avant-période → essai annulé et rejoué (nouvelle avant-période tirée d'un générateur séparé, pour ne pas décaler la séquence) ; le nombre de faux départs est enregistré avec l'essai.
+3. **Apparition du stimulus** : l'horodatage d'apparition est pris dans le `requestAnimationFrame` où la cible est dessinée (`performance.now()`, plus l'horodatage du rafraîchissement pour contrôle). Biais connu et constant pour un même appareil : affichage réel ≈ 1 rafraîchissement plus tard, latence de la caméra.
 4. **Détection**, image par image (`requestVideoFrameCallback` ; enregistrer `metadata.captureTime` si disponible, sinon `expectedDisplayTime`, et noter quelle source a été utilisée) :
-   - **Initiation** : première image où l'effecteur quitte la zone de garde → *temps de réaction* (TR).
-   - **Touche** : première image où un effecteur entre dans la zone cible → *temps total* ; *temps de mouvement* = total − TR.
+   - **Référence** : moyenne des positions sur les 300 ms précédant l'apparition.
+   - **Initiation** : première image (capturée après l'apparition) où l'un des critères dépasse le seuil (5 % de la taille apparente par défaut, paramétrable) → *temps de réaction* (TR) :
+     - main : déplacement **par rapport au centre des épaules** (un rebond du corps entier ne compte pas) ;
+     - bassin : déplacement **horizontal** (pas, plongeon) ;
+     - pied : déplacement **horizontal** d'une cheville.
+   - **Touche** : première image où un effecteur (poignet ou index ; cheville ou pointe de pied) entre dans le cercle d'une cible → *temps total* ; *temps de mouvement* = total − TR. La **première** zone touchée fait foi. Une touche sans initiation détectée auparavant fixe l'initiation à la même image.
+   - **Trajectoires** : positions des mains, pieds, épaules et bassin enregistrées image par image (coordonnées seulement, aucune image), de l'avant-période à la fin de la réponse, pour pouvoir recalculer les TR avec un autre seuil. **Indice de balancement** par essai : amplitude moyenne des mouvements des mains (par rapport aux épaules) pendant l'avant-période, en proportion de la taille apparente.
 5. **Issue** de l'essai : `hit` (bonne cible, bon effecteur), `wrong_effector`, `wrong_zone`, `miss` (délai dépassé), `commission` (mouvement sur un no-go), `correct_rejection` (no-go respecté), `anticipation` (initiation < 150 ms après le stimulus).
 6. **Retour** à la joueuse : visuel bref (flash vert / rouge) et son facultatif, **après** la réponse uniquement.
 7. Intervalle avant l'essai suivant : 1 000 ms + retour en position de garde.
@@ -99,7 +107,8 @@ Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), doub
 - `players` : id pseudonyme (G1…G5, C1…), poste, catégorie (pro / CF / réserve / champ), latéralité, taille réelle (cm), actif.
 - `sessions` : id, player_id, date-heure, mode (test / train), version de batterie, graine, appareil (user agent, dimensions vidéo), i/s moyen, % images perdues, source de l'horodatage, calibration_id, notes.
 - `calibrations` : id, player_id, date, dimensions vidéo, mesures (taille apparente, épaules, bassin, chevilles, envergure, portée haute, portées et pas gauche / droite, échelle px/cm), grille calculée, contexte (version de l'app, délégué, position de caméra).
-- `trials` : session_id, bloc, n° d'essai, mode, zone (1-9), stimulus (couleur / type), go ou no-go, effecteur attendu, effecteur utilisé, avant-période (ms), t_stimulus, t_initiation, t_touche, TR (ms), temps de mouvement (ms), temps total (ms), issue, niveau de difficulté, qualité (visibilité moyenne, images perdues pendant l'essai).
+- `trials` : session_id, bloc, n° d'essai, mode, zone (1-9), stimulus (couleur / type), go ou no-go, effecteur attendu, effecteur utilisé, zone touchée, avant-période (ms), t_stimulus (et horodatage du rafraîchissement), t_initiation, critère d'initiation, t_touche, TR (ms), temps de mouvement (ms), temps total (ms), issue, nombre de faux départs, niveau de difficulté, qualité (visibilité moyenne, images perdues pendant l'essai, indice de balancement), trajectoires.
+- Les `sessions` portent aussi : statut (terminée / interrompue), délégué, résolution, position de caméra, version de l'app.
 
 Export CSV : un fichier `trials` en format long avec les colonnes de session répétées (prêt pour R / Python), plus un résumé par séance (TR médian, écart interquartile, % réussite, % commissions, % anticipations).
 
