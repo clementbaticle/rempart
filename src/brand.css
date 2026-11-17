@@ -1,0 +1,386 @@
+/*
+ * Habillage TMVH (accueil, profils) : bleu marine, bleu et jaune du club.
+ * Aucune couleur en dur : toutes viennent de src/theme.ts (variables CSS).
+ */
+
+:root {
+  --font-display: 'Avenir Next Condensed', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif;
+}
+
+.brand {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 3vh, 2rem);
+  padding: max(1.2rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right))
+    max(1.2rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left));
+  overflow-y: auto;
+  color: var(--brand-text);
+  background:
+    radial-gradient(circle at 8% 0%, var(--brand-glow), transparent 45%),
+    radial-gradient(circle at 100% 100%, var(--brand-glow), transparent 40%),
+    var(--brand-bg);
+}
+
+/* ---------- Bandeau ---------- */
+.brand__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--brand-line);
+}
+
+.brand__identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand__mark {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+
+.brand__name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.2rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brand__tagline {
+  margin-top: 0.3rem;
+  color: var(--brand-text-muted);
+  font-size: 0.95rem;
+}
+
+.brand__club img {
+  height: 64px;
+  width: auto;
+  display: block;
+}
+
+/* ---------- Contenu ---------- */
+.brand__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.brand__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.brand__title::after {
+  content: '';
+  display: block;
+  width: 3.5rem;
+  height: 5px;
+  margin-top: 0.5rem;
+  border-radius: 3px;
+  background: var(--brand-yellow);
+}
+
+.brand__lead {
+  margin: 0.6rem 0 0;
+  color: var(--brand-text-muted);
+  font-size: 1.05rem;
+}
+
+/* ---------- Effectif ---------- */
+.roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.roster__card {
+  position: relative;
+  border-radius: 18px;
+  background: linear-gradient(160deg, var(--brand-surface-raised), var(--brand-surface));
+  border: 1px solid var(--brand-line);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.roster__card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--brand-blue);
+}
+
+.roster__card:has(.roster__main:active) {
+  border-color: var(--brand-yellow);
+}
+
+.roster__card:has(.roster__main:active)::before {
+  background: var(--brand-yellow);
+}
+
+.roster__main {
+  width: 100%;
+  height: 100%;
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: 1.1rem 1.2rem 1rem 1.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--brand-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.roster__id {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.6rem;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+
+.roster__meta {
+  color: var(--brand-text-muted);
+}
+
+.roster__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.chip {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--brand-line);
+  color: var(--brand-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.chip--ok {
+  border-color: var(--brand-blue);
+  color: var(--brand-blue);
+}
+
+.chip--todo {
+  border-color: var(--brand-yellow);
+  color: var(--brand-yellow);
+}
+
+.roster__cta {
+  margin-top: auto;
+  padding-top: 0.6rem;
+  color: var(--brand-yellow);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.roster__edit {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--brand-line);
+  background: var(--brand-surface);
+  color: var(--brand-text-muted);
+  cursor: pointer;
+}
+
+.roster__edit svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.roster__edit:active {
+  color: var(--brand-yellow);
+  border-color: var(--brand-yellow);
+}
+
+.roster__add {
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 18px;
+  border: 2px dashed var(--brand-line);
+  background: transparent;
+  color: var(--brand-text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.roster__plus {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--brand-yellow);
+  color: var(--brand-on-yellow);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.roster__add:active {
+  border-color: var(--brand-yellow);
+  color: var(--brand-text);
+}
+
+/* ---------- Pied de page ---------- */
+.brand__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--brand-line);
+}
+
+.brand__version {
+  color: var(--brand-text-muted);
+  font-size: 0.85rem;
+}
+
+/* ---------- Boutons de l'habillage ---------- */
+.btn--primary {
+  background: var(--brand-yellow);
+  color: var(--brand-on-yellow);
+}
+
+.btn--primary:active {
+  background: var(--brand-blue);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--brand-text);
+  border: 1px solid var(--brand-line);
+  font-size: 1rem;
+  padding: 0.7em 1.4em;
+}
+
+/* ---------- Formulaire de profil ---------- */
+.brand--form {
+  align-items: center;
+}
+
+.form {
+  width: min(600px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.6rem 1.8rem;
+  border-radius: 20px;
+  border: 1px solid var(--brand-line);
+  background: linear-gradient(160deg, var(--brand-surface-raised), var(--brand-surface));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.form__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.2rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.form__note {
+  margin: 0;
+  color: var(--brand-text-muted);
+}
+
+.form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--brand-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.form input,
+.form select {
+  font: inherit;
+  font-size: 1.15rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--brand-line);
+  background: var(--brand-bg);
+  color: var(--brand-text);
+}
+
+.form input:focus,
+.form select:focus {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 1px;
+}
+
+.form__errors {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--brand-yellow);
+}
+
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.form__actions .btn {
+  font-size: 1.1rem;
+  padding: 0.75em 1.8em;
+}
+
+.brand--form {
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .brand__tagline {
+    display: none;
+  }
+}

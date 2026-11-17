@@ -24,20 +24,22 @@ export function renderPlayerForm(root: HTMLElement, o: PlayerFormOptions): void 
   const { minHeightCm, maxHeightCm } = CONFIG.player;
   const editing = o.initial !== undefined;
   root.innerHTML = `
-    <main class="home">
+    <main class="brand brand--form">
       <form class="form" novalidate>
         <h1 class="form__title">${editing ? 'Modifier le profil' : 'Nouveau profil'}</h1>
         <p class="form__note">Aucun nom dans l’app : utilisez un pseudonyme (G1, G2…).
           La correspondance nom ↔ pseudonyme se garde en dehors de l’app.</p>
-        <label>Pseudonyme
-          <input name="id" autocomplete="off" autocapitalize="characters" maxlength="8" placeholder="G1" required />
-        </label>
-        <label>Catégorie <select name="category">${options(CATEGORY_LABELS)}</select></label>
-        <label>Poste <select name="position">${options(POSITION_LABELS)}</select></label>
-        <label>Latéralité <select name="laterality">${options(LATERALITY_LABELS)}</select></label>
-        <label>Taille (cm)
-          <input name="heightCm" type="number" inputmode="numeric" min="${minHeightCm}" max="${maxHeightCm}" step="1" required />
-        </label>
+        <div class="form__grid">
+          <label>Pseudonyme
+            <input name="id" autocomplete="off" autocapitalize="characters" maxlength="8" placeholder="G1" required />
+          </label>
+          <label>Taille (cm)
+            <input name="heightCm" type="number" inputmode="numeric" min="${minHeightCm}" max="${maxHeightCm}" step="1" required />
+          </label>
+          <label>Catégorie <select name="category">${options(CATEGORY_LABELS)}</select></label>
+          <label>Poste <select name="position">${options(POSITION_LABELS)}</select></label>
+          <label>Latéralité <select name="laterality">${options(LATERALITY_LABELS)}</select></label>
+        </div>
         <p class="form__note" data-edit-note hidden>Les calibrations déjà enregistrées sont conservées
           (et suivent le profil si le pseudonyme change). Une nouvelle taille s’applique aux prochaines calibrations.</p>
         <ul class="form__errors" hidden></ul>

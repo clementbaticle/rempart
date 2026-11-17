@@ -13,11 +13,18 @@
 export const BRAND = {
   blue: '#04A5DF',
   yellow: '#FBD427',
-  background: '#0B1D2A',
-  surface: '#12293A',
+  /** Bleu marine profond (fond des écrans de l'habillage). */
+  background: '#06131F',
+  /** Bleu marine des cartes et panneaux. */
+  surface: '#0D2236',
+  surfaceRaised: '#123049',
+  /** Filets et contours bleutés. */
+  line: 'rgba(4, 165, 223, 0.28)',
+  /** Halo bleu du fond. */
+  glow: 'rgba(4, 165, 223, 0.22)',
   text: '#FFFFFF',
-  textMuted: '#A9C1D1',
-  onYellow: '#0B1D2A',
+  textMuted: '#9DB6C8',
+  onYellow: '#06131F',
 } as const;
 
 /** Écrans d'exercice : neutre, sans couleur du club. */
@@ -54,6 +61,9 @@ export function applyTheme(root: HTMLElement = document.documentElement): void {
     '--brand-yellow': BRAND.yellow,
     '--brand-bg': BRAND.background,
     '--brand-surface': BRAND.surface,
+    '--brand-surface-raised': BRAND.surfaceRaised,
+    '--brand-line': BRAND.line,
+    '--brand-glow': BRAND.glow,
     '--brand-text': BRAND.text,
     '--brand-text-muted': BRAND.textMuted,
     '--brand-on-yellow': BRAND.onYellow,

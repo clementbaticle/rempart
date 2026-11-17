@@ -1,4 +1,5 @@
 import './styles.css';
+import './brand.css';
 import { registerSW } from 'virtual:pwa-register';
 import { applyTheme } from './theme';
 import { renderHome } from './ui/home';
@@ -26,8 +27,13 @@ function go(next: () => void | (() => void)): void {
 
 async function showHome(db: Db): Promise<void> {
   const players = await listPlayers(db);
+  const lastCalibration = new Map<string, string>();
+  for (const p of players) {
+    const c = await latestCalibration(db, p.id);
+    if (c) lastCalibration.set(p.id, c.date);
+  }
   go(() =>
-    renderHome(root, players, {
+    renderHome(root, players, lastCalibration, {
       onSelectPlayer: (id) => void showCalibration(db, id),
       onNewPlayer: () => go(() =>
         renderPlayerForm(root, {

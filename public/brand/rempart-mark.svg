@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Rempart</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0D2A45"/>
+      <stop offset="1" stop-color="#06131F"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.18" cy="0.12" r="0.75">
+      <stop offset="0" stop-color="#04A5DF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#04A5DF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+  <!-- R : fût, panse évidée, jambe -->
+  <path fill="#FFFFFF" fill-rule="evenodd" d="
+    M146 102 H294 C356 102 396 142 396 192 C396 236 366 270 322 278 L404 404 H324 L250 282 H214 V404 H146 Z
+    M214 160 H288 C315 160 330 174 330 192 C330 211 315 226 288 226 H214 Z"/>
+  <!-- Soubassement du rempart, jaune TMVH -->
+  <rect x="146" y="426" width="258" height="16" rx="3" fill="#FBD427"/>
+</svg>
