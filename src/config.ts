@@ -9,6 +9,8 @@ export const CONFIG = {
     idealWidth: 1280,
     idealHeight: 720,
     idealFrameRate: 30,
+    /** Cadences pouvant être forcées par `?fps=<i/s>` dans l'adresse (diagnostic). */
+    frameRatePresets: [30, 60],
     /**
      * Résolutions pouvant être forcées par `?res=<largeur>` dans l'adresse (diagnostic).
      * Le modèle réduit l'image en interne : une résolution plus basse peut accélérer le calcul.

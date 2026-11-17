@@ -16,13 +16,14 @@ export async function startCamera(
     width: CONFIG.camera.idealWidth,
     height: CONFIG.camera.idealHeight,
   },
+  frameRate: number = CONFIG.camera.idealFrameRate,
 ): Promise<CameraInfo> {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new CameraError(
       'Caméra indisponible : ouvrir l’app en HTTPS (version déployée) dans Safari.',
     );
   }
-  const { facingMode, idealFrameRate } = CONFIG.camera;
+  const { facingMode } = CONFIG.camera;
   const { width: idealWidth, height: idealHeight } = resolution;
   let stream: MediaStream;
   try {
@@ -32,7 +33,7 @@ export async function startCamera(
         facingMode,
         width: { ideal: idealWidth },
         height: { ideal: idealHeight },
-        frameRate: { ideal: idealFrameRate },
+        frameRate: { ideal: frameRate },
       },
     });
   } catch (err) {

@@ -9,7 +9,7 @@ import {
   CameraFpsEstimator, DroppedFrameCounter, FpsCounter, RollingStats, classifyStreamFit, parseCameraPosition,
   type CameraPosition,
 } from '../camera/diagnostics';
-import { resolveResolution } from '../camera/resolutionChoice';
+import { resolveFrameRate, resolveResolution } from '../camera/resolutionChoice';
 import { fitContain, type Landmark, type Rect } from '../pose/landmarks';
 import { createPoseDetector, type PoseDetector } from '../pose/poseDetector';
 import { startFrameLoop, type FrameInfo, type TimestampSource } from '../pose/frameLoop';
@@ -158,6 +158,11 @@ export class CameraStage {
       power = s;
     });
 
+    const frameRateChoice = resolveFrameRate(
+      window.location.search,
+      CONFIG.camera.frameRatePresets,
+      CONFIG.camera.idealFrameRate,
+    );
     const resolutionChoice = resolveResolution(
       window.location.search,
       CONFIG.camera.resolutionPresets,
@@ -165,7 +170,7 @@ export class CameraStage {
     );
     const { video, status } = this;
     try {
-      const cam = await startCamera(video, resolutionChoice.resolution);
+      const cam = await startCamera(video, resolutionChoice.resolution, frameRateChoice.frameRate);
       this.stream = cam.stream;
       status.textContent = 'Chargement du modèle de détection…';
       this.detector = await createPoseDetector(this.delegateChoice.delegates);
@@ -216,9 +221,9 @@ export class CameraStage {
     let detections = 0;
     let firstDetection: number | null = null;
     let lastDetection = 0;
-    const resolutionLabel = resolutionChoice.forced
-      ? `${resolutionChoice.resolution.width}x${resolutionChoice.resolution.height}`
-      : 'défaut';
+    const resolutionLabel =
+      (resolutionChoice.forced ? `${resolutionChoice.resolution.width}x${resolutionChoice.resolution.height}` : 'défaut') +
+      (frameRateChoice.forced ? ` @${frameRateChoice.frameRate}` : '');
     this.statsGetter = () => ({
       meanDetectionFps:
         firstDetection !== null && lastDetection > firstDetection
@@ -266,6 +271,7 @@ export class CameraStage {
           ? `${resolutionChoice.resolution.width} × ${resolutionChoice.resolution.height}`
           : null,
         trackFrameRate: typeof s.frameRate === 'number' ? s.frameRate : null,
+        requestedFrameRate: frameRateChoice.forced ? frameRateChoice.frameRate : null,
         cameraFps: cameraFps.fps(now),
         detectionFps: detectionFps.fps(now),
         detectionMsMean: detectionMs.mean,

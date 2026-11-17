@@ -19,6 +19,8 @@ export interface DiagnosticData {
   videoHeight: number;
   /** Résolution forcée par `?res=` (null si résolution par défaut). */
   requestedResolution: string | null;
+  /** Cadence forcée par `?fps=` (null si cadence par défaut). */
+  requestedFrameRate: number | null;
   /** Réglage de fréquence annoncé par la piste (peut être absent). */
   trackFrameRate: number | null;
   /** i/s fournies par la caméra (null si non mesurable : pas de rVFC). */
@@ -99,7 +101,8 @@ export class DiagnosticPanel {
       ['Écran', `${d.screenWidth} × ${d.screenHeight}`],
       [
         'i/s caméra',
-        `${d.cameraFps === null ? '—' : d.cameraFps.toFixed(1)}${d.trackFrameRate ? ` (annoncé ${d.trackFrameRate.toFixed(0)})` : ''}`,
+        `${d.cameraFps === null ? '—' : d.cameraFps.toFixed(1)}${d.trackFrameRate ? ` (annoncé ${d.trackFrameRate.toFixed(0)})` : ''}` +
+          (d.requestedFrameRate ? ` — demandé ${d.requestedFrameRate}` : ''),
       ],
       [
         'i/s détection',
