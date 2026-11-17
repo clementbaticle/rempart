@@ -100,9 +100,15 @@ body {
   height: 100%;
 }
 
+.live__stage {
+  overflow: hidden;
+}
+
+/* Taille et position fixées par la scène (image entière, ou zoom sur la zone de jeu). */
 .live__video {
-  object-fit: contain; /* image entière : tête et pieds jamais recadrés */
-  transform: scaleX(-1); /* effet miroir */
+  inset: auto;
+  object-fit: fill;
+  transform: scaleX(-1); /* effet miroir, autour du centre de l'élément */
 }
 
 .live__status {
@@ -523,19 +529,61 @@ body {
 }
 
 /* ---------- Série d'essais (neutre) ---------- */
+/* Flash plein écran bref (≈ 100 ms) après chaque réponse. */
 .trial__flash {
   position: absolute;
   inset: 0;
+  z-index: 4;
   pointer-events: none;
-  border: 0 solid transparent;
+  background: transparent;
 }
 
 .trial__flash.is-ok {
-  border: 18px solid var(--ex-ok);
+  background: var(--ex-ok);
 }
 
 .trial__flash.is-error {
-  border: 18px solid var(--ex-error);
+  background: var(--ex-error);
+}
+
+.trial__countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(8rem, 30vh, 16rem);
+  font-weight: 900;
+  color: var(--ex-text);
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+.trial__countdown[hidden] {
+  display: none;
+}
+
+.trial__buttons {
+  position: absolute;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  right: max(1rem, env(safe-area-inset-right));
+  display: flex;
+  gap: 0.6rem;
+}
+
+.trial__buttons[hidden] {
+  display: none;
+}
+
+.trial__sound {
+  font: inherit;
+  font-size: 1.1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 2px solid var(--ex-text-muted);
+  background: var(--ex-panel);
+  color: var(--ex-text);
 }
 
 .trial__counter {
@@ -569,9 +617,6 @@ body {
 }
 
 .trial__stop {
-  position: absolute;
-  bottom: max(1rem, env(safe-area-inset-bottom));
-  right: max(1rem, env(safe-area-inset-right));
   font: inherit;
   font-size: 1.1rem;
   padding: 0.6rem 1.2rem;

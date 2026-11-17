@@ -75,7 +75,7 @@ La garde d'une gardienne n'est pas statique (petits rebonds, mains qui bougent) 
    - **Touche** : première image où un effecteur (poignet ou index ; cheville ou pointe de pied) **entre** dans le cercle d'une cible : un effecteur déjà dans un cercle au moment de l'apparition ne compte pour ce cercle qu'après en être sorti puis y être revenu → *temps total* ; *temps de mouvement* = total − TR. La **première** zone touchée fait foi. Une touche sans initiation détectée auparavant fixe l'initiation à la même image.
    - **Trajectoires** : positions des mains, pieds, épaules et bassin enregistrées image par image (coordonnées seulement, aucune image), de l'avant-période à la fin de la réponse, pour pouvoir recalculer les TR avec un autre seuil. **Indice de balancement** par essai : amplitude moyenne des mouvements des mains (par rapport aux épaules) pendant l'avant-période, en proportion de la taille apparente.
 5. **Issue** de l'essai : `hit` (bonne cible, bon effecteur), `wrong_effector`, `wrong_zone`, `miss` (délai dépassé), `commission` (mouvement sur un no-go), `correct_rejection` (no-go respecté), `anticipation` (initiation < 150 ms après le stimulus).
-6. **Retour** à la joueuse : visuel bref (flash vert / rouge) et son facultatif, **après** la réponse uniquement.
+6. **Retour** à la joueuse, **après** la réponse uniquement : **flash plein écran** vert (réussite) ou rouge (erreur) de 100 ms, et **son** (deux notes montantes / note grave), désactivable. La série commence par un **compte à rebours 3, 2, 1, GO** (bips) ; aucune mesure pendant celui-ci.
 7. Intervalle avant l'essai suivant : 300 ms (le retour visuel de 300 ms s'y déroule) + retour en position de garde. Environ 2 s entre deux cibles. **Ces délais doivent être figés avant la collecte des données du mémoire.**
 
 Délais par défaut (paramétrables) : réponse 2 000 ms ; fenêtre no-go 1 500 ms.
@@ -127,6 +127,7 @@ Export CSV : un fichier `trials` en format long avec les colonnes de session ré
 ## 10. Interface
 
 - Pensée pour être lue à 3 m : cibles et consignes très grandes, contrastes forts, peu de texte pendant le jeu.
+- **Zoom sur la zone de jeu** pendant la série : l'affichage est recadré sur la cage, les cibles et la joueuse (avec une légère marge) pour qu'elles apparaissent en grand. Affichage seulement : la détection travaille toujours sur l'image complète de la caméra.
 - **Couleurs du TMVH** (extraites du logo) : bleu `#04A5DF`, jaune `#FBD427`. Toutes les couleurs de l'interface sont regroupées dans **un seul fichier de thème**.
 - **Logo** : PNG à fond transparent dans `public/brand/` ; sert pour l'icône de l'app et l'écran d'accueil.
 - **Règles de couleurs** :

@@ -163,9 +163,28 @@ export const CONFIG = {
     maxHeightCm: 220,
   },
 
+  /** Retours à la joueuse pendant la série (affichage et son ; sans effet sur la mesure). */
+  feedback: {
+    /** Sons : compte à rebours, réussite, erreur. */
+    sound: true,
+    /** Durée du flash plein écran vert / rouge après chaque réponse (ms). */
+    flashMs: 100,
+    /** Compte à rebours avant la série : 3, 2, 1 (une seconde chacun), puis « GO ». */
+    countdownFrom: 3,
+    goMs: 700,
+  },
+
+  /** Zoom d'affichage sur la zone de jeu pendant la série (sans effet sur la mesure). */
+  display: {
+    zoomOnPlayArea: true,
+    /** Marges autour de la zone de jeu (cage, cibles, joueuse), en proportion de sa taille. */
+    margins: { side: 0.06, top: 0.12, bottom: 0.06 },
+  },
+
   storageKeys: {
     cameraPosition: 'rempart.cameraPosition',
     goalCorners: 'rempart.goalCorners',
+    sound: 'rempart.sound',
   },
 } as const;
 

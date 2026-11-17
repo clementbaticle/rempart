@@ -10,7 +10,8 @@ import {
   type CameraPosition,
 } from '../camera/diagnostics';
 import { resolveFrameRate, resolveResolution } from '../camera/resolutionChoice';
-import { fitContain, type Landmark, type Rect } from '../pose/landmarks';
+import type { Landmark, Rect } from '../pose/landmarks';
+import { displayRect } from './viewRegion';
 import { createPoseDetector, type PoseDetector } from '../pose/poseDetector';
 import { startFrameLoop, type FrameInfo, type TimestampSource } from '../pose/frameLoop';
 import { resolveDelegates } from '../pose/delegateChoice';
@@ -87,6 +88,8 @@ export class CameraStage {
   private readonly delegateChoice = resolveDelegates(window.location.search, CONFIG.pose.delegates);
   private readonly layers: Layer[] = [];
   private rectValue: Rect = { x: 0, y: 0, width: 0, height: 0 };
+  /** Région de l'image à afficher en plein écran (zoom d'affichage), ou null : image entière. */
+  private region: Rect | null = null;
   private relayout: () => void = () => {};
   private statsGetter: () => StageStats = () => ({
     meanDetectionFps: null, droppedRatio: 0, timestampSource: '—', resolution: '—', videoWidth: 0, videoHeight: 0,
@@ -120,6 +123,15 @@ export class CameraStage {
 
   get delegate(): string {
     return this.detector?.delegate ?? '—';
+  }
+
+  /**
+   * Zoom d'affichage sur une région de l'image (pixels image, miroir), ou null pour l'image entière.
+   * Affichage seulement : la détection travaille toujours sur l'image complète.
+   */
+  setViewRegion(region: Rect | null): void {
+    this.region = region;
+    this.relayout();
   }
 
   /** Élément vidéo (pour la loupe de saisie des coins). */
@@ -194,8 +206,13 @@ export class CameraStage {
     let rect: Rect = { x: 0, y: 0, width: 0, height: 0 };
     const layout = (): void => {
       const box = stage.getBoundingClientRect();
-      rect = fitContain(video.videoWidth, video.videoHeight, box.width, box.height);
+      // L'élément vidéo occupe ce rectangle ; son miroir (CSS) se fait autour de son centre, comme les dessins.
+      rect = displayRect({ width: video.videoWidth, height: video.videoHeight }, box, this.region);
       this.rectValue = rect;
+      video.style.left = `${rect.x}px`;
+      video.style.top = `${rect.y}px`;
+      video.style.width = `${rect.width}px`;
+      video.style.height = `${rect.height}px`;
       overlay.resize(box.width, box.height, rect);
       const dpr = window.devicePixelRatio || 1;
       for (const l of this.layers) {
