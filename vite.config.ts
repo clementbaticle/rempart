@@ -22,8 +22,8 @@ export default defineConfig({
         lang: 'fr',
         display: 'fullscreen',
         orientation: 'landscape',
-        background_color: '#06131F',
-        theme_color: '#06131F',
+        background_color: '#06182C',
+        theme_color: '#06182C',
         icons: [
           { src: 'brand/pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'brand/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
@@ -38,7 +38,7 @@ export default defineConfig({
       },
       workbox: {
         // Le modèle (.task) et le moteur (.wasm) sont mis en cache pour le hors-ligne.
-        globPatterns: ['**/*.{js,css,html,png,ico,svg,wasm,task}'],
+        globPatterns: ['**/*.{js,css,html,png,ico,svg,wasm,task,woff2}'],
         maximumFileSizeToCacheInBytes: 30 * 1024 * 1024,
       },
     }),

@@ -24,9 +24,11 @@ export function renderPlayerForm(root: HTMLElement, o: PlayerFormOptions): void 
   const { minHeightCm, maxHeightCm } = CONFIG.player;
   const editing = o.initial !== undefined;
   root.innerHTML = `
-    <main class="brand brand--form">
+    <main class="club club--form">
+      <div class="club__band" aria-hidden="true"></div>
+      <div class="club__inner">
       <form class="form" novalidate>
-        <h1 class="form__title">${editing ? 'Modifier le profil' : 'Nouveau profil'}</h1>
+        <h1 class="form__title">${editing ? 'Modifier le <span>profil</span>' : 'Nouveau <span>profil</span>'}</h1>
         <p class="form__note">Aucun nom dans l’app : utilisez un pseudonyme (G1, G2…).
           La correspondance nom ↔ pseudonyme se garde en dehors de l’app.</p>
         <div class="form__grid">
@@ -48,6 +50,7 @@ export function renderPlayerForm(root: HTMLElement, o: PlayerFormOptions): void 
           <button class="btn btn--primary" type="submit">${editing ? 'Enregistrer' : 'Créer'}</button>
         </div>
       </form>
+      </div>
     </main>`;
 
   const form = root.querySelector('form')!;

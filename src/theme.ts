@@ -13,18 +13,22 @@
 export const BRAND = {
   blue: '#04A5DF',
   yellow: '#FBD427',
-  /** Bleu marine profond (fond des écrans de l'habillage). */
-  background: '#06131F',
-  /** Bleu marine des cartes et panneaux. */
-  surface: '#0D2236',
-  surfaceRaised: '#123049',
-  /** Filets et contours bleutés. */
-  line: 'rgba(4, 165, 223, 0.28)',
-  /** Halo bleu du fond. */
-  glow: 'rgba(4, 165, 223, 0.22)',
+  /** Dégradé du fond : du bleu club (haut droite) au bleu nuit (bas gauche). */
+  gradientTop: '#0C5E8F',
+  gradientMid: '#0A2E52',
+  background: '#06182C',
+  /** Cartes « verre » posées sur le dégradé. */
+  glassTop: 'rgba(255, 255, 255, 0.14)',
+  glassBottom: 'rgba(255, 255, 255, 0.04)',
+  glassLine: 'rgba(255, 255, 255, 0.18)',
+  /** Lignes du terrain en fond, filigranes. */
+  courtLine: 'rgba(255, 255, 255, 0.035)',
+  watermark: 'rgba(255, 255, 255, 0.08)',
+  /** Champs de formulaire. */
+  field: 'rgba(6, 24, 44, 0.65)',
   text: '#FFFFFF',
-  textMuted: '#9DB6C8',
-  onYellow: '#06131F',
+  textSoft: '#B9D7EA',
+  onYellow: '#06182C',
 } as const;
 
 /** Écrans d'exercice : neutre, sans couleur du club. */
@@ -59,13 +63,17 @@ export function applyTheme(root: HTMLElement = document.documentElement): void {
   const vars: Record<string, string> = {
     '--brand-blue': BRAND.blue,
     '--brand-yellow': BRAND.yellow,
+    '--brand-gradient-top': BRAND.gradientTop,
+    '--brand-gradient-mid': BRAND.gradientMid,
     '--brand-bg': BRAND.background,
-    '--brand-surface': BRAND.surface,
-    '--brand-surface-raised': BRAND.surfaceRaised,
-    '--brand-line': BRAND.line,
-    '--brand-glow': BRAND.glow,
+    '--brand-glass-top': BRAND.glassTop,
+    '--brand-glass-bottom': BRAND.glassBottom,
+    '--brand-glass-line': BRAND.glassLine,
+    '--brand-court-line': BRAND.courtLine,
+    '--brand-watermark': BRAND.watermark,
+    '--brand-field': BRAND.field,
     '--brand-text': BRAND.text,
-    '--brand-text-muted': BRAND.textMuted,
+    '--brand-text-soft': BRAND.textSoft,
     '--brand-on-yellow': BRAND.onYellow,
     '--ex-bg': EXERCISE.background,
     '--ex-panel': EXERCISE.panel,

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rempart — 3 directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,700;0,800;1,800&family=Inter:wght@400;500;600;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --tmvh-blue:#04A5DF; --tmvh-yellow:#FBD427; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#1b1d22; color:#e8eaed; font-family: Inter, system-ui, sans-serif; }
+  .label { max-width:1080px; margin:48px auto 12px; padding:0 4px; display:flex; align-items:baseline; gap:16px; }
+  .label b { font-size:28px; font-family:'Barlow Condensed'; letter-spacing:.04em; }
+  .label span { color:#9aa0a6; }
+  .ipad { width:1080px; height:810px; margin:0 auto; border-radius:28px; overflow:hidden; position:relative; box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 0 10px #0b0b0d; }
+
+  /* ===== A — Tableau de bord ===== */
+  .a { background:#0A0C10; color:#F4F5F7; font-family:Inter; padding:44px 56px; display:flex; flex-direction:column; }
+  .a-top { display:flex; justify-content:space-between; align-items:center; }
+  .a-logo { display:flex; align-items:center; gap:14px; }
+  .a-word { font-weight:800; font-size:26px; letter-spacing:-.02em; }
+  .a-club { display:flex; align-items:center; gap:10px; color:#7c828c; font-size:13px; }
+  .a-club img { height:34px; }
+  .a-hero { margin-top:56px; display:flex; justify-content:space-between; align-items:flex-end; }
+  .a-kicker { color:#7c828c; font-size:13px; letter-spacing:.14em; text-transform:uppercase; }
+  .a-h1 { font-size:56px; font-weight:800; letter-spacing:-.03em; margin:6px 0 0; }
+  .a-btn { background:var(--tmvh-yellow); color:#0A0C10; font-weight:700; border-radius:999px; padding:14px 26px; font-size:16px; }
+  .a-list { margin-top:36px; border-top:1px solid #1f232b; }
+  .a-row { display:grid; grid-template-columns:120px 1fr 160px 160px 40px; align-items:center; padding:20px 0; border-bottom:1px solid #1f232b; }
+  .a-id { font-size:34px; font-weight:800; letter-spacing:-.02em; }
+  .a-meta { color:#7c828c; font-size:14px; }
+  .a-meta b { color:#F4F5F7; font-weight:500; display:block; font-size:16px; margin-bottom:2px; }
+  .a-num { font-size:40px; font-weight:800; letter-spacing:-.03em; line-height:1; }
+  .a-num small { font-size:14px; color:#7c828c; font-weight:500; margin-left:4px; }
+  .a-cap { font-size:11px; color:#7c828c; letter-spacing:.12em; text-transform:uppercase; margin-top:6px; }
+  .a-up { color:#3DDC84; } .a-down { color:#FF5A5A; }
+  .a-go { color:#7c828c; font-size:22px; text-align:right; }
+  .a-foot { margin-top:auto; display:flex; justify-content:space-between; color:#7c828c; font-size:13px; }
+
+  /* ===== B — Club ===== */
+  .b { color:#fff; font-family:Inter; background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 2px, transparent 2px 90px),
+      radial-gradient(120% 90% at 85% 0%, #0C5E8F 0%, #0A2E52 45%, #06182C 100%); }
+  .b-band { position:absolute; inset:auto -10% 0 -10%; height:150px; background:var(--tmvh-yellow); transform:skewY(-4deg); transform-origin:left; bottom:-110px; opacity:.95; }
+  .b-in { position:relative; padding:40px 56px; height:100%; display:flex; flex-direction:column; }
+  .b-top { display:flex; justify-content:space-between; align-items:center; }
+  .b-brand { display:flex; align-items:center; gap:16px; }
+  .b-word { font-family:'Barlow Condensed'; font-style:italic; font-weight:800; font-size:44px; letter-spacing:.02em; line-height:.9; text-transform:uppercase; }
+  .b-word small { display:block; font-style:normal; font-weight:500; font-size:15px; letter-spacing:.24em; color:#9ccfeb; }
+  .b-club img { height:70px; filter:drop-shadow(0 6px 16px rgba(0,0,0,.4)); }
+  .b-h1 { font-family:'Barlow Condensed'; font-style:italic; font-weight:800; font-size:84px; line-height:.9; text-transform:uppercase; margin:48px 0 0; }
+  .b-h1 span { color:var(--tmvh-yellow); }
+  .b-grid { margin-top:34px; display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+  .b-card { position:relative; height:250px; border-radius:20px; overflow:hidden; background:linear-gradient(170deg, rgba(255,255,255,.14), rgba(255,255,255,.04)); border:1px solid rgba(255,255,255,.18); padding:18px; display:flex; flex-direction:column; }
+  .b-num { position:absolute; right:-6px; bottom:-26px; font-family:'Barlow Condensed'; font-weight:800; font-style:italic; font-size:170px; line-height:1; color:rgba(255,255,255,.09); }
+  .b-id { font-family:'Barlow Condensed'; font-style:italic; font-weight:800; font-size:54px; line-height:1; }
+  .b-cat { font-size:13px; color:#b9d7ea; text-transform:uppercase; letter-spacing:.14em; margin-top:4px; }
+  .b-stat { margin-top:auto; display:flex; gap:18px; }
+  .b-stat div { font-family:'Barlow Condensed'; font-weight:700; font-size:30px; }
+  .b-stat small { display:block; font-family:Inter; font-size:11px; font-weight:500; color:#b9d7ea; text-transform:uppercase; letter-spacing:.12em; }
+  .b-cta { margin-top:12px; background:var(--tmvh-yellow); color:#06182C; font-family:'Barlow Condensed'; font-weight:800; font-style:italic; text-transform:uppercase; font-size:20px; border-radius:12px; padding:8px 14px; align-self:flex-start; }
+  .b-add { border-style:dashed; background:transparent; align-items:center; justify-content:center; color:#b9d7ea; font-weight:600; gap:10px; }
+  .b-add i { width:52px; height:52px; border-radius:50%; background:var(--tmvh-yellow); color:#06182C; display:grid; place-items:center; font-style:normal; font-size:30px; font-weight:800; }
+
+  /* ===== C — Réflexe ===== */
+  .c { background:#0E1014; color:#EDEFF2; font-family:'Space Grotesk'; padding:44px 56px; display:flex; flex-direction:column; }
+  .c-top { display:flex; justify-content:space-between; align-items:center; }
+  .c-brand { display:flex; align-items:center; gap:14px; }
+  .c-word { font-weight:700; font-size:28px; letter-spacing:.02em; }
+  .c-club img { height:40px; opacity:.9; }
+  .c-hero { margin-top:44px; display:grid; grid-template-columns:1.1fr 1fr; gap:40px; align-items:center; }
+  .c-h1 { font-size:58px; font-weight:700; line-height:1; margin:0; }
+  .c-h1 em { font-style:normal; color:#3DDC84; }
+  .c-p { color:#8b919b; font-size:17px; margin-top:14px; }
+  .c-big { justify-self:end; }
+  .c-list { margin-top:40px; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .c-card { background:#161920; border:1px solid #232733; border-radius:18px; padding:18px; display:grid; grid-template-columns:1fr auto; gap:6px 12px; }
+  .c-id { font-size:34px; font-weight:700; }
+  .c-meta { color:#8b919b; font-size:13px; grid-column:1; }
+  .c-mini { grid-row:1 / span 3; grid-column:2; }
+  .c-tr { grid-column:1; font-size:15px; } .c-tr b { font-size:22px; }
+  .c-foot { margin-top:auto; display:flex; justify-content:space-between; color:#8b919b; font-size:13px; }
+  .c-start { background:#3DDC84; color:#06210F; font-weight:700; border-radius:999px; padding:14px 26px; font-size:16px; display:inline-block; margin-top:22px; }
+</style>
+</head>
+<body>
+
+<!-- ================= A ================= -->
+<div class="label"><b>A — TABLEAU DE BORD</b><span>Inspiré de WHOOP / Catapult : quasi noir, une seule couleur d'action, les chiffres en héros.</span></div>
+<div class="ipad a">
+  <div class="a-top">
+    <div class="a-logo">
+      <svg width="40" height="40" viewBox="0 0 40 40"><path d="M2 8h8v6h6V8h8v6h6V8h8v28H2z" fill="#F4F5F7"/><rect x="2" y="30" width="36" height="6" fill="#FBD427"/></svg>
+      <span class="a-word">rempart</span>
+    </div>
+    <div class="a-club"><img src="https://clementbaticle.github.io/rempart/brand/logo-tmvh.png" alt="" />Toulon Métropole Var Handball</div>
+  </div>
+  <div class="a-hero">
+    <div><div class="a-kicker">Gardiennes · 4 profils</div><h1 class="a-h1">Qui s'entraîne ?</h1></div>
+    <div class="a-btn">+ Nouveau profil</div>
+  </div>
+  <div class="a-list">
+    <div class="a-row"><div class="a-id">G1</div><div class="a-meta"><b>Pro · 178 cm</b>Calibrée le 17 nov. · étalonnée</div><div><div class="a-num">412<small>ms</small></div><div class="a-cap">TR médian</div></div><div><div class="a-num a-up">↓ 18</div><div class="a-cap">vs séance préc.</div></div><div class="a-go">›</div></div>
+    <div class="a-row"><div class="a-id">G2</div><div class="a-meta"><b>Pro · 172 cm</b>Calibrée le 15 nov. · étalonnée</div><div><div class="a-num">438<small>ms</small></div><div class="a-cap">TR médian</div></div><div><div class="a-num a-down">↑ 6</div><div class="a-cap">vs séance préc.</div></div><div class="a-go">›</div></div>
+    <div class="a-row"><div class="a-id">G3</div><div class="a-meta"><b>Centre de formation · 169 cm</b>À étalonner</div><div><div class="a-num">—</div><div class="a-cap">TR médian</div></div><div><div class="a-num" style="color:#7c828c">—</div><div class="a-cap">vs séance préc.</div></div><div class="a-go">›</div></div>
+    <div class="a-row"><div class="a-id">G4</div><div class="a-meta"><b>Réserve · 175 cm</b>Calibrée le 12 nov. · étalonnée</div><div><div class="a-num">455<small>ms</small></div><div class="a-cap">TR médian</div></div><div><div class="a-num a-up">↓ 9</div><div class="a-cap">vs séance préc.</div></div><div class="a-go">›</div></div>
+  </div>
+  <div class="a-foot"><span>Diagnostic caméra</span><span>v0.4</span></div>
+</div>
+
+<!-- ================= B ================= -->
+<div class="label"><b>B — CLUB</b><span>Identité TMVH assumée : dégradé bleu du club, italique condensée « maillot », cartes comme des cartes de joueuse.</span></div>
+<div class="ipad b">
+  <div class="b-band"></div>
+  <div class="b-in">
+    <div class="b-top">
+      <div class="b-brand">
+        <svg width="66" height="56" viewBox="0 0 66 56"><rect x="3" y="3" width="60" height="40" rx="2" fill="none" stroke="#fff" stroke-width="6"/><path d="M14 43V16M25 43V16M36 43V16M47 43V16M9 25h48M9 34h48" stroke="#fff" stroke-opacity=".35" stroke-width="2"/><rect x="0" y="48" width="66" height="7" fill="#FBD427"/></svg>
+        <div class="b-word">Rempart<small>TMVH · GARDIENNES</small></div>
+      </div>
+      <div class="b-club"><img src="https://clementbaticle.github.io/rempart/brand/logo-tmvh.png" alt="" /></div>
+    </div>
+    <h1 class="b-h1">Choisis ta<br/><span>gardienne</span></h1>
+    <div class="b-grid">
+      <div class="b-card"><div class="b-num">G1</div><div class="b-id">G1</div><div class="b-cat">Pro</div><div class="b-stat"><div>412<small>TR ms</small></div><div>86%<small>réussite</small></div></div><div class="b-cta">Calibrer ›</div></div>
+      <div class="b-card"><div class="b-num">G2</div><div class="b-id">G2</div><div class="b-cat">Pro</div><div class="b-stat"><div>438<small>TR ms</small></div><div>81%<small>réussite</small></div></div><div class="b-cta">Calibrer ›</div></div>
+      <div class="b-card"><div class="b-num">G3</div><div class="b-id">G3</div><div class="b-cat">Centre de formation</div><div class="b-stat"><div>—<small>TR ms</small></div><div>—<small>réussite</small></div></div><div class="b-cta">Calibrer ›</div></div>
+      <div class="b-card b-add"><i>+</i>Nouveau profil</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= C ================= -->
+<div class="label"><b>C — RÉFLEXE</b><span>Inspiré de BlazePod : graphite, l'idée de la « cible qui s'allume » partout, y compris dans le logo.</span></div>
+<div class="ipad c">
+  <div class="c-top">
+    <div class="c-brand">
+      <svg width="44" height="34" viewBox="0 0 44 34"><g fill="#3a404c"><circle cx="5" cy="5" r="4"/><circle cx="17" cy="5" r="4"/><circle cx="27" cy="5" r="4"/><circle cx="39" cy="5" r="4"/><circle cx="5" cy="17" r="4"/><circle cx="17" cy="17" r="4"/><circle cx="27" cy="17" r="4"/><circle cx="5" cy="29" r="4"/><circle cx="17" cy="29" r="4"/><circle cx="27" cy="29" r="4"/><circle cx="39" cy="29" r="4"/></g><circle cx="39" cy="17" r="5" fill="#3DDC84"/></svg>
+      <span class="c-word">Rempart</span>
+    </div>
+    <div class="c-club"><img src="https://clementbaticle.github.io/rempart/brand/logo-tmvh.png" alt="" /></div>
+  </div>
+  <div class="c-hero">
+    <div><h1 class="c-h1">Voir. Décider.<br/><em>Arrêter.</em></h1><div class="c-p">Entraînement perceptivo-cognitif des gardiennes du TMVH.</div><div class="c-start">Nouveau profil</div></div>
+    <svg class="c-big" width="330" height="230" viewBox="0 0 330 230"><rect x="2" y="2" width="326" height="216" rx="6" fill="none" stroke="#2a2f3a" stroke-width="4"/><g fill="#232733"><circle cx="50" cy="45" r="18"/><circle cx="125" cy="45" r="18"/><circle cx="205" cy="45" r="18"/><circle cx="280" cy="45" r="18"/><circle cx="50" cy="115" r="18"/><circle cx="205" cy="115" r="18"/><circle cx="280" cy="115" r="18"/><circle cx="50" cy="185" r="18"/><circle cx="125" cy="185" r="18"/><circle cx="205" cy="185" r="18"/><circle cx="280" cy="185" r="18"/></g><circle cx="125" cy="115" r="30" fill="#3DDC84" opacity=".18"/><circle cx="125" cy="115" r="18" fill="#3DDC84"/></svg>
+  </div>
+  <div class="c-list">
+    <div class="c-card"><div class="c-id">G1</div><svg class="c-mini" width="64" height="44" viewBox="0 0 64 44"><g fill="#3DDC84"><circle cx="8" cy="8" r="5"/><circle cx="24" cy="8" r="5"/><circle cx="40" cy="8" r="5" opacity=".4"/><circle cx="56" cy="8" r="5"/><circle cx="8" cy="22" r="5" opacity=".4"/><circle cx="24" cy="22" r="5"/><circle cx="40" cy="22" r="5"/><circle cx="56" cy="22" r="5"/><circle cx="8" cy="36" r="5"/><circle cx="24" cy="36" r="5" opacity=".4"/><circle cx="40" cy="36" r="5"/><circle cx="56" cy="36" r="5"/></g></svg><div class="c-meta">Pro · 178 cm</div><div class="c-tr"><b>412</b> ms</div></div>
+    <div class="c-card"><div class="c-id">G2</div><svg class="c-mini" width="64" height="44" viewBox="0 0 64 44"><g fill="#3DDC84"><circle cx="8" cy="8" r="5" opacity=".4"/><circle cx="24" cy="8" r="5"/><circle cx="40" cy="8" r="5"/><circle cx="56" cy="8" r="5"/><circle cx="8" cy="22" r="5"/><circle cx="24" cy="22" r="5"/><circle cx="40" cy="22" r="5" opacity=".4"/><circle cx="56" cy="22" r="5"/><circle cx="8" cy="36" r="5"/><circle cx="24" cy="36" r="5"/><circle cx="40" cy="36" r="5"/><circle cx="56" cy="36" r="5" opacity=".4"/></g></svg><div class="c-meta">Pro · 172 cm</div><div class="c-tr"><b>438</b> ms</div></div>
+    <div class="c-card"><div class="c-id">G3</div><svg class="c-mini" width="64" height="44" viewBox="0 0 64 44"><g fill="#3a404c"><circle cx="8" cy="8" r="5"/><circle cx="24" cy="8" r="5"/><circle cx="40" cy="8" r="5"/><circle cx="56" cy="8" r="5"/><circle cx="8" cy="22" r="5"/><circle cx="24" cy="22" r="5"/><circle cx="40" cy="22" r="5"/><circle cx="56" cy="22" r="5"/><circle cx="8" cy="36" r="5"/><circle cx="24" cy="36" r="5"/><circle cx="40" cy="36" r="5"/><circle cx="56" cy="36" r="5"/></g></svg><div class="c-meta">Centre de formation · 169 cm</div><div class="c-tr" style="color:#8b919b">À étalonner</div></div>
+  </div>
+  <div class="c-foot"><span>Diagnostic caméra</span><span>TMVH · v0.4</span></div>
+</div>
+
+<div style="height:60px"></div>
+</body>
+</html>

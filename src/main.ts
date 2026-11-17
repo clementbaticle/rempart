@@ -1,14 +1,17 @@
+import '@fontsource/space-grotesk/latin-400.css';
+import '@fontsource/space-grotesk/latin-500.css';
+import '@fontsource/space-grotesk/latin-700.css';
 import './styles.css';
 import './brand.css';
 import { registerSW } from 'virtual:pwa-register';
 import { applyTheme } from './theme';
-import { renderHome } from './ui/home';
+import { renderHome, type PlayerStats } from './ui/home';
 import { renderLiveView } from './ui/liveView';
 import { renderPlayerForm } from './ui/playerForm';
 import { renderCalibration } from './ui/calibrationView';
 import { renderTrials } from './ui/trialView';
 import {
-  addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, saveSession, updatePlayer, type Db,
+  addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, saveSession, updatePlayer, listSessions, type Db,
 } from './storage/db';
 
 applyTheme();
@@ -27,13 +30,18 @@ function go(next: () => void | (() => void)): void {
 
 async function showHome(db: Db): Promise<void> {
   const players = await listPlayers(db);
-  const lastCalibration = new Map<string, string>();
+  const stats = new Map<string, PlayerStats>();
   for (const p of players) {
     const c = await latestCalibration(db, p.id);
-    if (c) lastCalibration.set(p.id, c.date);
+    const s = (await listSessions(db, p.id)).find((x) => x.summary?.trials > 0);
+    stats.set(p.id, {
+      lastCalibration: c?.date ?? null,
+      rtMedian: s?.summary.rtMedian ?? null,
+      hitRate: s ? s.summary.hitRate : null,
+    });
   }
   go(() =>
-    renderHome(root, players, lastCalibration, {
+    renderHome(root, players, stats, {
       onSelectPlayer: (id) => void showCalibration(db, id),
       onNewPlayer: () => go(() =>
         renderPlayerForm(root, {
