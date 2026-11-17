@@ -43,6 +43,20 @@ Horodatage : `captureTime` dans tous les cas. Flux concordant avec l'écran. Pos
 - Réglages retenus : **par défaut (1280 × 720, GPU)**, aucun paramètre dans l'adresse.
 - La limite est désormais la cadence de la caméra (30 i/s), pas le calcul.
 
+### 17/11/2026 — même iPad, test à 60 i/s (`?fps=60`, v0.3.4)
+
+| Résolution | Délégué | i/s caméra | i/s détection | Calcul / image (moy. / max) | Images non traitées |
+| --- | --- | --- | --- | --- | --- |
+| 1280 × 720 | GPU | 57,5 (annoncé 60) | 54,4 | 16 / 19 ms | 3,6 % |
+
+Horodatage : `captureTime`.
+
+**Conclusions**
+- La caméra frontale accepte 60 i/s dans Safari, sans baisse de résolution.
+- Détection à ≈ 54 i/s : précision temporelle ≈ 18 ms (contre ≈ 33 ms à 30 i/s).
+- Contrepartie : ≈ 4 % d'images non traitées (calcul parfois plus long que l'intervalle de 17 ms).
+- À vérifier sur une séance complète : tenue des i/s dans la durée (échauffement de l'iPad).
+
 ## Étape 2 — Profils, calibration et grille (v0.2.0)
 
 ### 16/11/2026 — domicile, ordinateur (Asus, Chrome, CPU forcé, secteur)
