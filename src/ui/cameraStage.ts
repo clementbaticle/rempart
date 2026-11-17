@@ -223,7 +223,7 @@ export class CameraStage {
     let lastDetection = 0;
     const resolutionLabel =
       (resolutionChoice.forced ? `${resolutionChoice.resolution.width}x${resolutionChoice.resolution.height}` : 'défaut') +
-      (frameRateChoice.forced ? ` @${frameRateChoice.frameRate}` : '');
+      ` @${frameRateChoice.frameRate} i/s` + (frameRateChoice.forced ? ' (forcé)' : '');
     this.statsGetter = () => ({
       meanDetectionFps:
         firstDetection !== null && lastDetection > firstDetection
@@ -271,7 +271,7 @@ export class CameraStage {
           ? `${resolutionChoice.resolution.width} × ${resolutionChoice.resolution.height}`
           : null,
         trackFrameRate: typeof s.frameRate === 'number' ? s.frameRate : null,
-        requestedFrameRate: frameRateChoice.forced ? frameRateChoice.frameRate : null,
+        requestedFrameRate: frameRateChoice.frameRate,
         cameraFps: cameraFps.fps(now),
         detectionFps: detectionFps.fps(now),
         detectionMsMean: detectionMs.mean,

@@ -19,7 +19,7 @@ Double finalité : **outil utile aux joueuses** et **instrument de mesure** pour
 | Appareil | iPad (Safari / app installée sur l'écran d'accueil), orientation paysage, trépied. Modèle : **iPad 9e génération (2021), 10,2 pouces, Wi-Fi, 64 Go** (puce A13 Bionic ; caméra frontale ultra grand-angle 12 Mpx avec Cadre centré, située sur le **bord court** en paysage) |
 | Socle | Vite + TypeScript, sans framework UI lourd |
 | PWA | `vite-plugin-pwa` : installable, hors ligne (modèle MediaPipe mis en cache) |
-| Caméra | `getUserMedia({ video: { facingMode: "user", width: 1280, height: 720 } })` ; nécessite HTTPS |
+| Caméra | `getUserMedia({ video: { facingMode: "user", width: 1280, height: 720, frameRate: 60 } })` ; nécessite HTTPS. **60 i/s par défaut** (iPad 9e génération : ≈ 57 i/s caméra, ≈ 54 i/s de détection, précision ≈ 18 ms) ; `?fps=30` pour revenir à 30 i/s |
 | Détection | `@mediapipe/tasks-vision`, **PoseLandmarker lite**, mode `VIDEO`, délégué GPU avec repli CPU ; fichier `.task` auto-hébergé dans `public/models/` |
 | Stockage | IndexedDB (via `idb`) |
 | Export | CSV (format long, un essai par ligne) + sauvegarde JSON complète (export / import) |
@@ -116,7 +116,7 @@ Export CSV : un fichier `trials` en format long avec les colonnes de session ré
 
 ## 9. Qualité des mesures
 
-- Afficher et enregistrer la fréquence réelle et les images perdues ; une séance sous 20 i/s est signalée « qualité insuffisante ».
+- Afficher et enregistrer la fréquence réelle et les images perdues ; une séance sous 20 i/s est signalée « qualité insuffisante ». La cadence de caméra demandée est enregistrée avec chaque séance ; **une même étude doit garder la même cadence** (60 i/s) d'un bout à l'autre.
 - Le décalage caméra → détection est constant pour un même iPad : **toujours tester sur le même appareil**, même distance, même salle. Les résultats servent à comparer la joueuse à elle-même, pas à des normes publiées.
 - Statistique par séance : **médiane** du TR (robuste), essais hors 150-1 500 ms exclus du calcul et comptés.
 - Étude de fiabilité prévue : deux passages du mode Test dans la même séance → CCI, erreur type de mesure, plus petit changement détectable.

@@ -8,7 +8,11 @@ export const CONFIG = {
     /** Résolution demandée ; la résolution réelle est lue sur la piste et affichée. */
     idealWidth: 1280,
     idealHeight: 720,
-    idealFrameRate: 30,
+    /**
+     * Cadence demandée (i/s). PARAMÈTRE DE MESURE : 60 i/s validés sur l'iPad 9e génération
+     * (≈ 54 i/s de détection, précision ≈ 18 ms). Garder la même valeur pendant toute une étude.
+     */
+    idealFrameRate: 60,
     /** Cadences pouvant être forcées par `?fps=<i/s>` dans l'adresse (diagnostic). */
     frameRatePresets: [30, 60],
     /**
