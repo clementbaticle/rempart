@@ -13,8 +13,12 @@ export interface CalibrationRecord {
   goal: { corners: GoalCorners; geometry: GoalGeometry };
   /** Mesures de garde en pixels image (miroir). */
   measures: WizardResult;
-  /** Échelle de la joueuse (px / cm, approximation visage → chevilles). */
+  /** Échelle de la joueuse à sa distance (px / cm). */
   pxPerCm: number;
+  /** Origine de l'échelle : étalonnage individuel ou approximation par la taille. */
+  scaleSource: 'etalonnage' | 'taille';
+  /** Hauteur de garde (cm) utilisée pour l'échelle. */
+  guardHeightCm: number;
   /** Échelle joueuse / échelle cage (> 1 : la joueuse est devant la cage). */
   depthRatio: number;
   cm: { shoulderWidth: number };
@@ -33,6 +37,8 @@ export function buildCalibrationRecord(args: {
   date: Date;
   statureCm: number;
   faceToAnkleOverStature: number;
+  /** Étalonnage individuel (cm), s'il existe. */
+  guardHeightCm?: number | undefined;
   ankleHeightCm: number;
   goalSizeCm: { width: number; height: number };
   gridParams: GridParams;
@@ -43,7 +49,11 @@ export function buildCalibrationRecord(args: {
 }): CalibrationRecord {
   const g = args.result.guard;
   const geometry = goalGeometry(args.corners, args.goalSizeCm.width, args.goalSizeCm.height);
-  const pxPerCm = pixelsPerCm(g.heightPx, args.statureCm, args.faceToAnkleOverStature);
+  const calibrated = args.guardHeightCm !== undefined && args.guardHeightCm > 0;
+  const guardHeightCm = calibrated ? args.guardHeightCm! : args.statureCm * args.faceToAnkleOverStature;
+  const pxPerCm = calibrated
+    ? g.heightPx / guardHeightCm
+    : pixelsPerCm(g.heightPx, args.statureCm, args.faceToAnkleOverStature);
   const grid = computeGrid(
     { playerPxPerCm: pxPerCm, centerX: geometry.centerX, floorY: g.ankleY + args.ankleHeightCm * pxPerCm },
     args.video.width,
@@ -58,6 +68,8 @@ export function buildCalibrationRecord(args: {
     goal: { corners: args.corners, geometry },
     measures: args.result,
     pxPerCm,
+    scaleSource: calibrated ? 'etalonnage' : 'taille',
+    guardHeightCm,
     depthRatio: pxPerCm / geometry.pxPerCm,
     cm: { shoulderWidth: Math.round((g.shoulderWidthPx / pxPerCm) * 10) / 10 },
     grid,

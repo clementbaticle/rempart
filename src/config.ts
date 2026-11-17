@@ -102,6 +102,12 @@ export const CONFIG = {
     },
     /** Hauteur moyenne des chevilles au-dessus du sol (cm), pour placer le sol sous la joueuse. */
     ankleHeightCm: 8,
+    /** Étalonnage individuel sur la ligne de but (section 4, point 4). */
+    reference: {
+      lineToleranceCm: 15,
+      minRatio: 0.6,
+      maxRatio: 0.95,
+    },
     /**
      * Rapport « visage → chevilles » / taille réelle, pour l'échelle px/cm (approximation :
      * le repère haut est le visage, pas le sommet du crâne).

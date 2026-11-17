@@ -28,11 +28,15 @@ export interface Player {
   position: Position;
   laterality: Laterality;
   heightCm: number;
+  /** Étalonnage individuel : hauteur de garde visage → chevilles (cm), mesurée sur la ligne de but. */
+  guardHeightCm?: number;
+  /** Date ISO de l'étalonnage individuel. */
+  guardHeightDate?: string;
   active: boolean;
   createdAt: string;
 }
 
-export type PlayerInput = Omit<Player, 'active' | 'createdAt'>;
+export type PlayerInput = Omit<Player, 'active' | 'createdAt' | 'guardHeightCm' | 'guardHeightDate'>;
 
 /** Pseudonyme : 1 à 8 lettres majuscules ou chiffres (pas d'espace, pas d'accent). */
 export const PSEUDONYM_PATTERN = /^[A-Z0-9]{1,8}$/;

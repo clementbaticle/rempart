@@ -163,3 +163,17 @@ describe('IndexedDB', () => {
     db.close();
   });
 });
+
+describe('échelle par étalonnage individuel', () => {
+  it('utilise la hauteur de garde mesurée quand elle existe', () => {
+    const r = buildCalibrationRecord({
+      id: 'c2', playerId: 'G1', date: new Date('2026-11-17T10:00:00Z'), statureCm: 170, faceToAnkleOverStature: 0.9,
+      guardHeightCm: 125, ankleHeightCm: 8, goalSizeCm: { width: 300, height: 200 }, gridParams: CONFIG.calibration.grid,
+      video: { width: 1280, height: 720 }, corners, result,
+      context: { appVersion: 'test', delegate: 'GPU', cameraPosition: 'bord-court', userAgent: 'vitest' },
+    });
+    expect(r.scaleSource).toBe('etalonnage');
+    expect(r.pxPerCm).toBeCloseTo(400 / 125); // 3,2 px/cm
+    expect(record('c3', 'G1', '2026-11-17T10:00:00Z').scaleSource).toBe('taille');
+  });
+});
