@@ -67,6 +67,12 @@ async function showCalibration(db: Db, playerId: string): Promise<void> {
     renderCalibration(root, player, {
       previous,
       save: (record) => saveCalibration(db, record),
+      saveReference: async (guardHeightCm) => {
+        const current = (await getPlayer(db, playerId)) ?? player;
+        const updated = { ...current, guardHeightCm, guardHeightDate: new Date().toISOString() };
+        await updatePlayer(db, current.id, updated);
+        return updated;
+      },
       onExit: () => void showHome(db),
       onStart: (record) =>
         go(() =>

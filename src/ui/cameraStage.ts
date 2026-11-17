@@ -122,6 +122,11 @@ export class CameraStage {
     return this.detector?.delegate ?? '—';
   }
 
+  /** Élément vidéo (pour la loupe de saisie des coins). */
+  get videoElement(): HTMLVideoElement {
+    return this.video;
+  }
+
   /** Rectangle d'affichage de la vidéo dans la scène (pixels CSS). */
   videoRect(): Rect {
     return this.rectValue;
