@@ -26,7 +26,22 @@ Horodatage : `captureTime` dans tous les cas.
 - Fonctionnement de l'étape 1 validé sur ordinateur. **Performance à valider sur l'iPad** (objectif ≥ 25 i/s) :
   comparer `?res=640` / défaut et `?delegate=CPU` / défaut.
 
-### Test iPad (9e génération) — à venir
+### 17/11/2026, 16 h — gymnase, iPad 9e génération (Safari, onglet), v0.3.3
+
+| Cas | Résolution | Délégué | i/s caméra | i/s détection | Calcul / image (moy. / max) | Images non traitées |
+| --- | --- | --- | --- | --- | --- | --- |
+| Défaut | 1280 × 720 | GPU | 30,0 | 30,0 | 18 / 19 ms | 0,2 % |
+| `?delegate=CPU` | 1280 × 720 | CPU | 29,5 | 29,5 | 24 / 25 ms | 0,4 % |
+| `?res=640` | 640 × 480 | GPU | 30,0 | 30,0 | 19 / 20 ms | 0,1 % |
+| 4e capture (640, GPU) | 640 × 480 | GPU | 30,0 | 30,0 | 19 / 20 ms | 0,2 % |
+
+Horodatage : `captureTime` dans tous les cas. Flux concordant avec l'écran. Position de caméra déclarée : bord court.
+
+**Conclusions**
+- **Performance validée** : la détection suit la caméra à 30 i/s (objectif ≥ 25), avec une large marge
+  (≈ 18 ms de calcul pour 33 ms entre deux images). Résolution temporelle : ≈ 33 ms.
+- Réglages retenus : **par défaut (1280 × 720, GPU)**, aucun paramètre dans l'adresse.
+- La limite est désormais la cadence de la caméra (30 i/s), pas le calcul.
 
 ## Étape 2 — Profils, calibration et grille (v0.2.0)
 
