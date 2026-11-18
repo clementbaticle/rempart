@@ -72,25 +72,31 @@ La garde d'une gardienne n'est pas statique (petits rebonds, mains qui bougent) 
      - main : déplacement **par rapport au centre des épaules** (un rebond du corps entier ne compte pas) ;
      - bassin : déplacement **horizontal** (pas, plongeon) ;
      - pied : déplacement **horizontal** d'une cheville.
-   - **Touche** : première image où un effecteur (poignet ou index ; cheville ou pointe de pied) **entre** dans le cercle d'une cible : un effecteur déjà dans un cercle au moment de l'apparition ne compte pour ce cercle qu'après en être sorti puis y être revenu → *temps total* ; *temps de mouvement* = total − TR. La **première** zone touchée fait foi. Une touche sans initiation détectée auparavant fixe l'initiation à la même image.
+   - **Touche** : première image où un effecteur **autorisé** (poignet ou index ; cheville ou pointe de pied) **entre** dans le cercle de la **cible** : un effecteur déjà dans ce cercle au moment de l'apparition ne compte qu'après en être sorti puis y être revenu → *temps total* ; *temps de mouvement* = total − TR. Une touche sans initiation détectée auparavant fixe l'initiation à la même image.
+   - **Zones traversées** : passer par d'autres zones pour atteindre la cible (ex. la jambe traverse la zone voisine pour aller en bas à droite) **n'est pas une erreur** ; ces zones sont seulement enregistrées, dans l'ordre, pour l'analyse des trajectoires.
    - **Trajectoires** : positions des mains, pieds, épaules et bassin enregistrées image par image (coordonnées seulement, aucune image), de l'avant-période à la fin de la réponse, pour pouvoir recalculer les TR avec un autre seuil. **Indice de balancement** par essai : amplitude moyenne des mouvements des mains (par rapport aux épaules) pendant l'avant-période, en proportion de la taille apparente.
-5. **Issue** de l'essai : `hit` (bonne cible, bon effecteur), `wrong_effector`, `wrong_zone`, `miss` (délai dépassé), `commission` (mouvement sur un no-go), `correct_rejection` (no-go respecté), `anticipation` (initiation < 150 ms après le stimulus).
+5. **Issue** de l'essai : `hit` (cible atteinte par un effecteur autorisé), `miss` (délai dépassé), `anticipation` (initiation < 150 ms après le stimulus) ; pour les modes de l'étape 4 : `commission` (mouvement sur un no-go), `correct_rejection` (no-go respecté), `wrong_effector` (Bon segment). Il n'y a plus d'issue « mauvaise zone ».
 6. **Retour** à la joueuse, **après** la réponse uniquement : **flash plein écran** vert (réussite) ou rouge (erreur) de 100 ms, et **son** (deux notes montantes / note grave), désactivable. La série commence par un **compte à rebours 3, 2, 1, GO** (bips) ; aucune mesure pendant celui-ci.
 7. Intervalle avant l'essai suivant : 300 ms (le retour visuel de 300 ms s'y déroule) + retour en position de garde. Environ 2 s entre deux cibles. **Ces délais doivent être figés avant la collecte des données du mémoire.**
 
-Délais par défaut (paramétrables) : réponse 2 000 ms ; fenêtre no-go 1 500 ms.
+Délai de réponse selon le **mode de temps** choisi avant la série (section 7) : Découverte = aucun (plafond de sécurité de 10 s, sans retour d'erreur) ; Test = 2 000 ms ; Entraînement = niveaux 1 à 5 (2 000, 1 600, 1 300, 1 100, 900 ms). Fenêtre no-go : 1 500 ms. Le mode et le délai sont enregistrés avec la séance.
 
 ## 6. Modes de jeu (v1)
 
 | Mode | Règle | Processus visé |
 | --- | --- | --- |
-| **Classique** | Une cible verte dans une des 12 zones ; toucher avec n'importe quel effecteur (rangée basse : pied ou main) | Temps de réaction de choix |
+| **Classique** | Une cible verte dans une des 12 zones ; l'atteindre avec une main (rangées haute et du milieu) ou une main / un pied (rangée basse) | Temps de réaction de choix |
 | **Go / no-go** | Vert = toucher ; rouge = ne pas bouger. Proportion 70 % go / 30 % no-go | Inhibition (anti-feinte) |
 | **Bon segment** | Couleur + symbole de la cible = effecteur imposé : orange « G » = main gauche, magenta « D » = main droite, blanc + icône de pied = pied (côté de la cible) — voir section 10 | Choix de réponse, coordination |
 
 Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), double cible, plots couleur, lecture de tir vidéo, scan périphérique.
 
 ## 7. Mode Test (mesure) et mode Entraînement (jeu)
+
+### Modes de temps (choisis avant chaque série)
+- **Découverte** : pas de délai, il faut atteindre la cible quel que soit le temps (apprentissage, échauffement).
+- **Test** : délai fixe de 2 s, identique pour toutes ; seul mode utilisé pour les mesures du mémoire.
+- **Entraînement** : niveaux 1 à 5 (délai de 2 s à 0,9 s), choisis à la main ; passage automatique de niveau à l'étape 5.
 
 ### Mode Test — séquence figée
 - Générateur pseudo-aléatoire à graine (ex. mulberry32) ; **graine et version de la batterie enregistrées** ; même séquence à chaque passage.
@@ -110,9 +116,9 @@ Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), doub
 ## 8. Modèle de données
 
 - `players` : id pseudonyme (G1…G5, C1…), poste, catégorie (pro / CF / réserve / champ), latéralité, taille réelle (cm), étalonnage individuel (hauteur de garde en cm et date), actif.
-- `sessions` : id, player_id, date-heure, mode (test / train), version de batterie, graine, appareil (user agent, dimensions vidéo), i/s moyen, % images perdues, source de l'horodatage, calibration_id, notes.
+- `sessions` : id, player_id, date-heure, mode (découverte / test / entraînement), niveau, délai de réponse, version de batterie, graine, appareil (user agent, dimensions vidéo), i/s moyen, % images perdues, source de l'horodatage, calibration_id, notes.
 - `calibrations` : id, player_id, date, dimensions vidéo, coins de la cage et échelle de la cage, mesures de garde (taille apparente, épaules, bassin, chevilles, mains), échelle de la joueuse (px/cm), rapport des échelles, grille calculée, contexte (version de l'app, délégué, position de caméra).
-- `trials` : session_id, bloc, n° d'essai, mode, zone (1-12), stimulus (couleur / type), go ou no-go, effecteur attendu, effecteur utilisé, zone touchée, avant-période (ms), t_stimulus (et horodatage du rafraîchissement), t_initiation, critère d'initiation, t_touche, TR (ms), temps de mouvement (ms), temps total (ms), issue, nombre de faux départs, niveau de difficulté, qualité (visibilité moyenne, images perdues pendant l'essai, indice de balancement), trajectoires.
+- `trials` : session_id, bloc, n° d'essai, mode, zone (1-12), stimulus (couleur / type), go ou no-go, effecteur attendu, effecteur utilisé, zones traversées, avant-période (ms), t_stimulus (et horodatage du rafraîchissement), t_initiation, critère d'initiation, t_touche, TR (ms), temps de mouvement (ms), temps total (ms), issue, nombre de faux départs, niveau de difficulté, qualité (visibilité moyenne, images perdues pendant l'essai, indice de balancement), trajectoires.
 - Les `sessions` portent aussi : statut (terminée / interrompue), délégué, résolution, position de caméra, version de l'app.
 
 Export CSV : un fichier `trials` en format long avec les colonnes de session répétées (prêt pour R / Python), plus un résumé par séance (TR médian, écart interquartile, % réussite, % commissions, % anticipations).
