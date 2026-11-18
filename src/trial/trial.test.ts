@@ -6,7 +6,7 @@ import { measureGuard } from '../calibration/measures';
 import { makePose } from '../calibration/testPose';
 import { mulberry32 } from '../core/random';
 import { bodySample, features, meanFeatures, movementCause, swayRatio } from './body';
-import { classicOutcome, quantile, summarize } from './outcome';
+import { classicOutcome, quantile, summarize, summarizeByGame } from './outcome';
 import { TrialMachine, type MachineEvent } from './trialMachine';
 import { guardOverlaps, handsInGuard, targetTouch, touches } from './zones';
 
@@ -114,7 +114,35 @@ describe('issues et statistiques', () => {
     expect(s).toMatchObject({
       trials: 5, hits: 3, hitRate: 0.6, anticipations: 1, misses: 1, falseStarts: 1,
       rtMedian: 350, rtIqr: 50, mtMedian: 225, rtIncluded: 2, rtExcluded: 1,
+      noGoTrials: 0, commissionRate: null,
     });
+  });
+
+  it('résumé go / no-go : taux sur les go et sur les no-go, familiarisation exclue', () => {
+    const s = summarize(
+      [
+        { outcome: 'hit', rtMs: 999, mtMs: 1, falseStarts: 0, analyzed: false }, // familiarisation
+        { outcome: 'hit', rtMs: 300, mtMs: 200, falseStarts: 0, isGo: true },
+        { outcome: 'miss', rtMs: null, mtMs: null, falseStarts: 0, isGo: true },
+        { outcome: 'commission', rtMs: 250, mtMs: null, falseStarts: 0, isGo: false },
+        { outcome: 'correct_rejection', rtMs: null, mtMs: null, falseStarts: 0, isGo: false },
+        { outcome: 'correct_rejection', rtMs: null, mtMs: null, falseStarts: 0, isGo: false },
+      ],
+      { minMs: 150, maxMs: 1500 },
+    );
+    expect(s).toMatchObject({
+      trials: 5, goTrials: 2, hits: 1, hitRate: 0.5, noGoTrials: 3, commissions: 1, correctRejections: 2, rtMedian: 300,
+    });
+    expect(s.commissionRate).toBeCloseTo(1 / 3);
+    const by = summarizeByGame(
+      [
+        { outcome: 'hit', rtMs: 300, mtMs: 100, falseStarts: 0, game: 'classique' },
+        { outcome: 'commission', rtMs: 200, mtMs: null, falseStarts: 0, isGo: false, game: 'gonogo' },
+      ],
+      { minMs: 150, maxMs: 1500 },
+    );
+    expect(Object.keys(by)).toEqual(['classique', 'gonogo']);
+    expect(by.gonogo!.commissions).toBe(1);
   });
 });
 
@@ -124,9 +152,12 @@ class Driver {
   frames = 0;
   events: MachineEvent[] = [];
   m: TrialMachine;
+  /** Zones go ; une zone négative = essai no-go sur cette zone. */
   constructor(zones: number[], foreperiodMs = 1000) {
     this.m = new TrialMachine(
-      zones.map((zone) => ({ zone, foreperiodMs })),
+      zones.map((z) => ({
+        zone: Math.abs(z), foreperiodMs, isGo: z > 0, game: z > 0 ? 'classique' : 'gonogo', block: 1, analyzed: true,
+      })),
       guard, grid, P, mulberry32(1), (e) => this.events.push(e),
     );
   }
@@ -267,7 +298,10 @@ describe('automate d’essai', () => {
     const zone = (id: number): Point => tight.zones.find((z) => z.id === id)!.center;
     const run = (after: Points[]) => {
       const events: MachineEvent[] = [];
-      const m = new TrialMachine([{ zone: 1, foreperiodMs: 1000 }], guard, tight, P, mulberry32(1), (e) => events.push(e));
+      const m = new TrialMachine(
+        [{ zone: 1, foreperiodMs: 1000, isGo: true, game: 'classique', block: 1, analyzed: true }],
+        guard, tight, P, mulberry32(1), (e) => events.push(e),
+      );
       let t = 1000;
       while (m.phase !== 'stimulus') m.onFrame({ t: (t += 40), points: makePose(), presentedFrames: null, visibility: 1 }, t);
       m.stimulusShown(t + 10, t + 5);
@@ -305,5 +339,37 @@ describe('automate d’essai', () => {
     for (let i = 5; i >= 0; i--) d.frame(moveLeftHand(makePose(), -15 * i, -15 * i));
     for (let i = 0; i < 10; i++) d.frame(makePose());
     expect(d.events.some((e) => e.type === 'falseStart')).toBe(false);
+  });
+
+  it('no-go : rester en garde pendant 1,5 s = rejet correct', () => {
+    const d = new Driver([-1]);
+    d.untilStimulus();
+    for (let i = 0; i < 45; i++) d.frame(makePose()); // 1,8 s
+    const r = d.m.records[0]!;
+    expect(r.outcome).toBe('correct_rejection');
+    expect(r.stimulus).toBe('nogo');
+    expect(r.isGo).toBe(false);
+    expect(r.responseLimitMs).toBe(P.noGoWindowMs);
+    expect(r.maxMovementRatio).toBe(0);
+  });
+
+  it('no-go : un vrai départ = commission, l’essai s’arrête aussitôt', () => {
+    const d = new Driver([-1]);
+    d.untilStimulus();
+    for (let i = 0; i < 6; i++) d.frame(makePose());
+    d.frame(moveLeftHand(makePose(), -40, -40)); // départ franc
+    const r = d.m.records[0]!;
+    expect(r.outcome).toBe('commission');
+    expect(r.rtMs).toBe(270);
+    expect(r.initiationCause).toBe('main-gauche');
+    expect(r.maxMovementRatio).toBeCloseTo(Math.hypot(40, 40) / 400);
+    expect(d.m.phase).toBe('feedback');
+  });
+
+  it('no-go : un rebond de garde n’est pas une commission', () => {
+    const d = new Driver([-1]);
+    d.untilStimulus();
+    for (let i = 0; i < 45; i++) d.frame(shift(makePose(), 0, 12 * Math.sin(i / 2)));
+    expect(d.m.records[0]!.outcome).toBe('correct_rejection');
   });
 });

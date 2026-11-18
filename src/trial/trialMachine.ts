@@ -11,8 +11,9 @@ import type { Grid } from '../calibration/grid';
 import type { GuardMeasures } from '../calibration/measures';
 import { uniform, type Rng } from '../core/random';
 import type { PlannedTrial } from '../core/sequence';
-import { bodySample, features, meanFeatures, movementCause, swayRatio, type BodySample, type Features, type InitiationCause } from './body';
-import { classicOutcome, type Outcome } from './outcome';
+import { bodySample, features, meanFeatures, movementAmplitude, movementCause, swayRatio, type BodySample, type Features, type InitiationCause } from './body';
+import { classicOutcome, noGoOutcome, type Outcome } from './outcome';
+import type { Game } from '../core/sequence';
 import { handsInGuard, targetTouch, touchKey, touches, type Effector, type Touch } from './zones';
 
 export interface TrialParams {
@@ -27,6 +28,8 @@ export interface TrialParams {
   initiationThresholdRatio: number;
   /** Délai pour atteindre la cible (ms) ; en mode Découverte, plafond de sécurité. */
   responseMs: number;
+  /** Fenêtre d'observation d'un essai no-go (ms). */
+  noGoWindowMs: number;
   anticipationMs: number;
   feedbackMs: number;
   itiMs: number;
@@ -56,9 +59,11 @@ export type TrajectoryRow = (number | null)[];
 export interface TrialRecord {
   index: number;
   block: number;
-  mode: 'classique';
+  /** Faux pour la familiarisation (essai non analysé). */
+  analyzed: boolean;
+  game: Game;
   zone: number;
-  stimulus: 'go';
+  stimulus: 'go' | 'nogo';
   isGo: boolean;
   expectedEffector: 'any';
   usedEffector: Effector | null;
@@ -86,6 +91,8 @@ export interface TrialRecord {
     responseFrames: number;
     swayRatio: number | null;
   };
+  /** Amplitude maximale du mouvement après l'apparition, en proportion de la taille apparente. */
+  maxMovementRatio: number;
   trajectory: TrajectoryRow[];
 }
 
@@ -149,6 +156,7 @@ export class TrialMachine {
    */
   private blocked = new Set<string>();
   private crossed: number[] = [];
+  private maxMovementPx = 0;
 
   constructor(
     private readonly plan: readonly PlannedTrial[],
@@ -167,6 +175,15 @@ export class TrialMachine {
 
   get currentZone(): number | null {
     return this.plan[this.index]?.zone ?? null;
+  }
+
+  /** Essai en cours : go (cible verte) ou no-go (cible rouge). */
+  get isGo(): boolean {
+    return this.plan[this.index]?.isGo ?? true;
+  }
+
+  get currentTrial(): PlannedTrial | null {
+    return this.plan[this.index] ?? null;
   }
 
   onFrame(fr: FrameInput, now: number): void {
@@ -219,12 +236,19 @@ export class TrialMachine {
           }
           this.lastPresented = fr.presentedFrames;
         }
+        this.maxMovementPx = Math.max(this.maxMovementPx, movementAmplitude(f, this.baseline));
         if (this.tInit === null) {
           const cause = movementCause(f, this.baseline, this.thresholdPx);
           if (cause) {
             this.tInit = fr.t;
             this.initCause = cause;
           }
+        }
+        if (!this.isGo) {
+          // No-go : un vrai départ (même critère que l'initiation) = commission, immédiatement.
+          if (this.tInit !== null) this.finish(null, null, now);
+          else if (fr.t - this.tStim > this.p.noGoWindowMs) this.finish(null, null, now);
+          break;
         }
         {
           const all = touches(fr.points, this.grid, this.p.hitToleranceFactor);
@@ -263,6 +287,7 @@ export class TrialMachine {
     this.baseline = meanFeatures(base.map((s) => s.f));
     this.blocked = new Set(touches(this.lastPrePoints, this.grid, this.p.hitToleranceFactor).map(touchKey));
     this.crossed = [];
+    this.maxMovementPx = 0;
     this.tInit = null;
     this.initCause = null;
     this.lastPresented = null;
@@ -274,7 +299,8 @@ export class TrialMachine {
 
   /** Minuteries (retour, intervalle, délai de réponse sans image). */
   tick(now: number): void {
-    if (this.phase === 'response' && now - this.tStim > this.p.responseMs + 500) {
+    const limit = this.isGo ? this.p.responseMs : this.p.noGoWindowMs;
+    if (this.phase === 'response' && now - this.tStim > limit + 500) {
       this.finish(null, null, now); // plus aucune image : délai dépassé
     } else if (this.phase === 'feedback' && now >= this.phaseUntil) {
       this.phase = 'iti';
@@ -329,17 +355,21 @@ export class TrialMachine {
     const planned = this.plan[this.index]!;
     const rt = this.tInit === null ? null : this.tInit - this.tStim;
     const total = tTouch === null ? null : tTouch - this.tStim;
+    const outcome = planned.isGo
+      ? classicOutcome({ targetZone: planned.zone, touch, rtMs: rt, anticipationMs: this.p.anticipationMs })
+      : noGoOutcome(this.tInit !== null);
     const record: TrialRecord = {
       index: this.index + 1,
-      block: 1,
-      mode: 'classique',
+      block: planned.block,
+      analyzed: planned.analyzed,
+      game: planned.game,
       zone: planned.zone,
-      stimulus: 'go',
-      isGo: true,
+      stimulus: planned.isGo ? 'go' : 'nogo',
+      isGo: planned.isGo,
       expectedEffector: 'any',
       usedEffector: touch?.effector ?? null,
       crossedZones: [...this.crossed],
-      responseLimitMs: this.p.responseMs,
+      responseLimitMs: planned.isGo ? this.p.responseMs : this.p.noGoWindowMs,
       foreperiodPlannedMs: this.foreperiodMs,
       foreperiodActualMs: this.tStim - this.foreperiodStart,
       tStimulus: this.tStim,
@@ -350,7 +380,7 @@ export class TrialMachine {
       rtMs: rt,
       mtMs: rt !== null && total !== null ? total - rt : null,
       totalMs: total,
-      outcome: classicOutcome({ targetZone: planned.zone, touch, rtMs: rt, anticipationMs: this.p.anticipationMs }),
+      outcome,
       falseStarts: this.falseStarts,
       difficulty: null,
       quality: {
@@ -359,6 +389,7 @@ export class TrialMachine {
         responseFrames: this.responseFrames,
         swayRatio: swayRatio(this.foreperiodSamples, this.guard.heightPx),
       },
+      maxMovementRatio: this.guard.heightPx > 0 ? this.maxMovementPx / this.guard.heightPx : 0,
       trajectory: this.trajectory,
     };
     this.records.push(record);

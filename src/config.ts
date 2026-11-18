@@ -153,9 +153,15 @@ export const CONFIG = {
     /** Bornes des TR retenus dans les statistiques (section 9). */
     validRtMinMs: 150,
     validRtMaxMs: 1500,
-    /** Bloc Classique : nombre de passages par zone (12 zones × 3 = 36), répétitions consécutives maximales. */
-    classicRepeatsPerZone: 3,
+    /** Bloc Classique : nombre de passages par zone (12 zones × 2 = 24), répétitions consécutives maximales. */
+    classicRepeatsPerZone: 2,
     maxSameZoneInARow: 2,
+    /**
+     * Bloc Go / no-go : 12 go (chaque zone une fois) + no-go sur ces zones (2 par rangée, 3 par côté,
+     * 3 colonnes lointaines et 3 proches) → 18 essais, 67 % / 33 %.
+     */
+    noGoZones: [1, 4, 6, 7, 9, 11],
+    maxNoGoInARow: 2,
   },
 
   /** Modes de temps (section 7) : délai pour atteindre la cible. PARAMÈTRES DE MESURE pour le mode Test. */
@@ -166,6 +172,18 @@ export const CONFIG = {
     testResponseMs: 2000,
     /** Entraînement : délai par niveau, du niveau 1 (facile) au niveau 5 (ms). */
     trainingLevelsMs: [2000, 1600, 1300, 1100, 900],
+  },
+
+  /**
+   * Batterie du mode Test (section 7). NE PAS MODIFIER pendant une étude : changer une graine ou un
+   * paramètre change la séquence ; il faut alors changer aussi `version`.
+   */
+  battery: {
+    version: 'v1',
+    familiarisation: 6,
+    seeds: { familiarisation: 20260101, classique: 20260102, gonogo: 20260103 },
+    /** Pause entre deux blocs (ms). */
+    pauseMs: 10000,
   },
 
   player: {

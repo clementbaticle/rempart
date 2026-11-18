@@ -109,3 +109,17 @@ export function swayRatio(list: readonly Features[], heightPx: number): number |
   const mean = meanOf(devs);
   return mean === undefined || heightPx <= 0 ? null : mean / heightPx;
 }
+
+/**
+ * Amplitude du mouvement par rapport à la référence : le plus grand écart parmi les critères
+ * d'initiation (mains / épaules, bassin et chevilles en horizontal), en pixels.
+ */
+export function movementAmplitude(cur: Features, base: Features): number {
+  let m = 0;
+  if (cur.leftHandRel && base.leftHandRel) m = Math.max(m, dist(cur.leftHandRel, base.leftHandRel));
+  if (cur.rightHandRel && base.rightHandRel) m = Math.max(m, dist(cur.rightHandRel, base.rightHandRel));
+  if (cur.pelvisX !== undefined && base.pelvisX !== undefined) m = Math.max(m, Math.abs(cur.pelvisX - base.pelvisX));
+  if (cur.leftAnkleX !== undefined && base.leftAnkleX !== undefined) m = Math.max(m, Math.abs(cur.leftAnkleX - base.leftAnkleX));
+  if (cur.rightAnkleX !== undefined && base.rightAnkleX !== undefined) m = Math.max(m, Math.abs(cur.rightAnkleX - base.rightAnkleX));
+  return m;
+}

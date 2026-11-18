@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`séquence Classique > batterie Test v1 : 6 + 24 + 18 = 48 essais, toujours identique 1`] = `"5:1359 8:610 12:843 11:1320 2:695 3:909 6:728 1:764"`;

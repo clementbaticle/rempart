@@ -14,6 +14,11 @@ export type Outcome =
  * Mode Classique : seule la cible compte (`touch` = touche de la cible par un effecteur autorisé ;
  * les zones traversées ne sont pas des erreurs). Priorité : anticipation > miss > hit.
  */
+/** Essai no-go : un vrai départ pendant la fenêtre = commission, sinon rejet correct. */
+export function noGoOutcome(moved: boolean): Outcome {
+  return moved ? 'commission' : 'correct_rejection';
+}
+
 export function classicOutcome(args: {
   targetZone: number;
   touch: Touch | null;
@@ -39,19 +44,31 @@ export interface TrialForStats {
   rtMs: number | null;
   mtMs: number | null;
   falseStarts: number;
+  /** Absent = essai go (séances antérieures). */
+  isGo?: boolean;
+  /** Absent = analysé. Les essais de familiarisation (false) sont exclus du résumé. */
+  analyzed?: boolean;
+  game?: string;
 }
 
 export interface SessionSummary {
+  /** Essais analysés (go + no-go). */
   trials: number;
+  goTrials: number;
   hits: number;
+  /** Réussites / essais go. */
   hitRate: number;
   anticipations: number;
+  /** Anticipations / essais go. */
   anticipationRate: number;
   misses: number;
-  wrongZone: number;
-  wrongEffector: number;
+  noGoTrials: number;
+  commissions: number;
+  /** Commissions / essais no-go (null sans no-go). */
+  commissionRate: number | null;
+  correctRejections: number;
   falseStarts: number;
-  /** TR des essais réussis, dans les bornes [min, max]. */
+  /** TR des essais go réussis, dans les bornes [min, max]. */
   rtMedian: number | null;
   rtIqr: number | null;
   mtMedian: number | null;
@@ -60,26 +77,33 @@ export interface SessionSummary {
   rtExcluded: number;
 }
 
-export function summarize(trials: readonly TrialForStats[], bounds: { minMs: number; maxMs: number }): SessionSummary {
-  const n = trials.length;
-  const count = (o: Outcome): number => trials.filter((t) => t.outcome === o).length;
-  const hits = trials.filter((t) => t.outcome === 'hit' && t.rtMs !== null);
+/** Résumé d'une série (essais de familiarisation exclus). */
+export function summarize(all: readonly TrialForStats[], bounds: { minMs: number; maxMs: number }): SessionSummary {
+  const trials = all.filter((t) => t.analyzed !== false);
+  const go = trials.filter((t) => t.isGo !== false);
+  const noGo = trials.filter((t) => t.isGo === false);
+  const count = (list: readonly TrialForStats[], o: Outcome): number => list.filter((t) => t.outcome === o).length;
+  const hits = go.filter((t) => t.outcome === 'hit' && t.rtMs !== null);
   const valid = hits.filter((t) => t.rtMs! >= bounds.minMs && t.rtMs! <= bounds.maxMs);
   const rts = valid.map((t) => t.rtMs!).sort((a, b) => a - b);
   const mts = valid.map((t) => t.mtMs).filter((v): v is number => v !== null).sort((a, b) => a - b);
   const q1 = quantile(rts, 0.25);
   const q3 = quantile(rts, 0.75);
-  const nh = count('hit');
-  const na = count('anticipation');
+  const nh = count(go, 'hit');
+  const na = count(go, 'anticipation');
+  const nc = count(noGo, 'commission');
   return {
-    trials: n,
+    trials: trials.length,
+    goTrials: go.length,
     hits: nh,
-    hitRate: n ? nh / n : 0,
+    hitRate: go.length ? nh / go.length : 0,
     anticipations: na,
-    anticipationRate: n ? na / n : 0,
-    misses: count('miss'),
-    wrongZone: count('wrong_zone'),
-    wrongEffector: count('wrong_effector'),
+    anticipationRate: go.length ? na / go.length : 0,
+    misses: count(go, 'miss'),
+    noGoTrials: noGo.length,
+    commissions: nc,
+    commissionRate: noGo.length ? nc / noGo.length : null,
+    correctRejections: count(noGo, 'correct_rejection'),
     falseStarts: trials.reduce((s, t) => s + t.falseStarts, 0),
     rtMedian: quantile(rts, 0.5),
     rtIqr: q1 === null || q3 === null ? null : q3 - q1,
@@ -87,4 +111,15 @@ export function summarize(trials: readonly TrialForStats[], bounds: { minMs: num
     rtIncluded: rts.length,
     rtExcluded: hits.length - valid.length,
   };
+}
+
+/** Résumés par jeu (Classique, Go / no-go), essais de familiarisation exclus. */
+export function summarizeByGame(
+  all: readonly TrialForStats[],
+  bounds: { minMs: number; maxMs: number },
+): Record<string, SessionSummary> {
+  const out: Record<string, SessionSummary> = {};
+  const games = [...new Set(all.filter((t) => t.analyzed !== false).map((t) => t.game ?? 'classique'))];
+  for (const g of games) out[g] = summarize(all.filter((t) => (t.game ?? 'classique') === g), bounds);
+  return out;
 }
