@@ -29,7 +29,8 @@ function chart(points: { date: string; rt: number }[]): SVGSVGElement {
   const lo = Math.floor((Math.min(...rts) - 20) / 50) * 50;
   const hi = Math.ceil((Math.max(...rts) + 20) / 50) * 50;
   const x = (i: number): number => P.l + (points.length === 1 ? (W - P.l - P.r) / 2 : (i / (points.length - 1)) * (W - P.l - P.r));
-  const y = (v: number): number => P.t + ((v - lo) / Math.max(hi - lo, 1)) * (H - P.t - P.b);
+  // Valeurs élevées en haut : une courbe qui descend = une gardienne plus rapide.
+  const y = (v: number): number => P.t + (1 - (v - lo) / Math.max(hi - lo, 1)) * (H - P.t - P.b);
   const add = (tag: string, attrs: Record<string, string>, text?: string): void => {
     const e = document.createElementNS(ns, tag);
     for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
