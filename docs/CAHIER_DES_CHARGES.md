@@ -77,7 +77,8 @@ La garde d'une gardienne n'est pas statique (petits rebonds, mains qui bougent) 
    - **Trajectoires** : positions des mains, pieds, épaules et bassin enregistrées image par image (coordonnées seulement, aucune image), de l'avant-période à la fin de la réponse, pour pouvoir recalculer les TR avec un autre seuil. **Indice de balancement** par essai : amplitude moyenne des mouvements des mains (par rapport aux épaules) pendant l'avant-période, en proportion de la taille apparente.
 5. **Issue** de l'essai :
    - essai **go** : `hit` (cible atteinte), `miss` (délai dépassé), `anticipation` (initiation < 150 ms après le stimulus) ;
-   - essai **no-go** : `commission` = **vrai départ** détecté (même critère et même seuil que l'initiation d'un go, 5 % de la taille apparente) pendant la fenêtre de 1 500 ms, l'essai s'arrête alors ; `correct_rejection` = aucun départ pendant la fenêtre. L'**amplitude maximale du mouvement** pendant la fenêtre est enregistrée (pour pouvoir changer de critère après coup).
+   - essai **no-go** (blanc → rouge) : `commission` = **le moindre vrai départ** (même critère et même seuil que l'initiation d'un go, 5 % de la taille apparente) **dès l'apparition de la cible blanche**, pendant le blanc ou pendant la fenêtre de 1 500 ms après le rouge : la gardienne a « pris la feinte » (toucher ou non la cible ne compte pas) ; l'essai s'arrête alors. `correct_rejection` = aucun départ. L'**amplitude maximale du mouvement** est enregistrée (pour pouvoir changer de critère après coup).
+   - essai **blanc → vert** : la cible blanche annonce la zone ; la gardienne se prépare **sans partir**. TR mesuré à partir du **passage au vert** ; un départ avant le vert (ou moins de 150 ms après) = `anticipation`. Le délai entre la cible blanche et le départ est aussi enregistré.
    - Il n'y a pas d'issue « mauvaise zone ».
 6. **Retour** à la joueuse, **après** la réponse uniquement : **flash plein écran** vert (réussite) ou rouge (erreur) de 100 ms, et **son** (deux notes montantes / note grave), désactivable. La série commence par un **compte à rebours 3, 2, 1, GO** (bips) ; aucune mesure pendant celui-ci.
 7. Intervalle avant l'essai suivant : 300 ms (le retour visuel de 300 ms s'y déroule) + retour en position de garde. Environ 2 s entre deux cibles. **Ces délais doivent être figés avant la collecte des données du mémoire.**
@@ -89,7 +90,9 @@ Délai de réponse selon le **mode de temps** choisi avant la série (section 7)
 | Mode | Règle | Processus visé |
 | --- | --- | --- |
 | **Classique** | Une cible verte dans une des 12 zones ; l'atteindre avec **n'importe quel effecteur**, main ou pied, à toutes les hauteurs (des arrêts réels associent souvent pied et main en hauteur) | Temps de réaction de choix |
-| **Go / no-go** | Vert ● = toucher ; rouge ✕ = ne pas bouger. Bloc de 18 essais : 12 go (chaque zone une fois) + 6 no-go (2 par rangée, 3 par côté), soit 67 % / 33 % ; au plus 2 no-go de suite | Inhibition (anti-feinte) |
+| **Go / no-go** | Trois types d'essais : **vert direct** ● (réflexe, comme le Classique) ; **blanc ○ → vert** (zone annoncée, la gardienne se prépare puis y va) ; **blanc ○ → rouge ✕** (elle se prépare puis doit **ne pas partir** : la feinte). Délai blanc → couleur aléatoire de 150 à 400 ms. Bloc de 24 essais : 12 verts directs (chaque zone une fois) + 6 blanc → vert + 6 blanc → rouge sur les 6 mêmes zones (2 par rangée, 3 par côté) ; le blanc annonce le rouge une fois sur deux (il reste une vraie incertitude) ; au plus 2 rouges de suite. Comparer verts directs et blanc → vert donne le coût de l'incertitude | Inhibition d'une intention préparée (anti-feinte) |
+
+**Piste v2 (entraînement)** : *stop-signal* adaptatif (le délai du signal d'arrêt s'ajuste pour ≈ 50 % de réussite ; calcul du SSRT, temps d'arrêt). Écarté de la batterie : il faut ≈ 50 essais d'arrêt pour un SSRT fiable.
 
 **Bon segment retiré** : imposer une main par couleur (y compris croisée, main gauche pour un ballon à droite) ne correspond pas à la technique des gardiennes, qui parent avec le bras et / ou la jambe du côté du ballon ; restreint au côté du ballon, il ferait doublon avec le Classique. Piste v2 (entraînement, hors mesure) : choix du geste « main » / « pied », toujours du côté du ballon.
 
@@ -104,10 +107,11 @@ Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), doub
 
 ### Mode Test — séquence figée
 - Générateur pseudo-aléatoire à graine (ex. mulberry32) ; **graine et version de la batterie enregistrées** ; même séquence à chaque passage.
-- Batterie v1 (48 essais, ≈ 3 min) — graines fixes, avant-périodes comprises :
+- Batterie **v2** (54 essais, ≈ 3 min 30) — graines fixes, avant-périodes et délais blanc → couleur compris :
   - Familiarisation : 6 essais classiques (6 zones différentes, non analysés).
   - Bloc 1 Classique : 24 essais (12 zones × 2, pas plus de 2 fois la même zone de suite).
-  - Bloc 2 Go / no-go : 18 essais (12 go + 6 no-go, au plus 2 no-go de suite).
+  - Bloc 2 Go / no-go : 24 essais (12 verts directs + 6 blanc → vert + 6 blanc → rouge, au plus 2 rouges de suite).
+  - (v1, abandonnée : Go / no-go de 18 essais à couleur immédiate, trop facile.)
   - Pause de 10 s entre les blocs (compte à rebours à l'écran).
 - En Découverte et en Entraînement, on choisit le jeu (Classique ou Go / no-go) ; mêmes tailles de bloc, séquence tirée au hasard.
 - Aucun ajustement de difficulté ; pas de classement affiché pendant le test.
@@ -148,6 +152,7 @@ Export CSV : un fichier `trials` en format long avec les colonnes de session ré
     | --- | --- | --- |
     | Go | vert | ● |
     | No-go | rouge | ✕ |
+    | Préparation (Go / no-go) | blanc | ○ |
 
   - Couleurs réservées pour une éventuelle v2 (ancien Bon segment, retiré) : orange « G », magenta « D », blanc + icône de pied.
 - Écrans : Accueil (choix joueuse) → Calibration → Choix du mode → Jeu / Test → Résultats de la séance → Historique joueuse → Réglages / Export (protégé par un code staff).
