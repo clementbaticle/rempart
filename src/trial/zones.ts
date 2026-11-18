@@ -1,6 +1,6 @@
 /** Zones de garde et détection de touche (section 5). Coordonnées : pixels image, miroir. */
 import { LEFT_HAND, L_ANKLE, L_FOOT, RIGHT_HAND, R_ANKLE, R_FOOT, present, type Point, type Points } from '../calibration/geometry';
-import type { Grid } from '../calibration/grid';
+import { rowOf, type Grid } from '../calibration/grid';
 import type { GuardMeasures } from '../calibration/measures';
 import type { BodySample } from './body';
 
@@ -53,17 +53,14 @@ export function touches(p: Points, grid: Grid, hitFactor: number): Touch[] {
 
 export const touchKey = (t: Touch): string => `${t.zone}:${t.effector}`;
 
-/**
- * Touche retenue parmi celles d'une image : la zone cible si elle est touchée (main d'abord),
- * sinon la première autre zone touchée. null si aucune.
- */
-export function pickTouch(all: readonly Touch[], targetZone: number): Touch | null {
-  if (all.length === 0) return null;
-  const onTarget = all.filter((t) => t.zone === targetZone);
-  const pool = onTarget.length ? onTarget : all;
-  return pool.find((t) => !isFoot(t.effector)) ?? pool[0]!;
-}
+/** Mode Classique : main partout ; pied seulement sur la rangée du bas. */
+export const allowedClassic = (zone: number, effector: Effector): boolean => !isFoot(effector) || rowOf(zone) === 2;
 
-export function firstTouch(p: Points, grid: Grid, hitFactor: number, targetZone: number): Touch | null {
-  return pickTouch(touches(p, grid, hitFactor), targetZone);
+/**
+ * Touche de la CIBLE par un effecteur autorisé (main de préférence), ou null.
+ * Les autres zones touchées sont ignorées : les traverser pour atteindre la cible n'est pas une erreur.
+ */
+export function targetTouch(all: readonly Touch[], targetZone: number): Touch | null {
+  const onTarget = all.filter((t) => t.zone === targetZone && allowedClassic(t.zone, t.effector));
+  return onTarget.find((t) => !isFoot(t.effector)) ?? onTarget[0] ?? null;
 }

@@ -1,6 +1,5 @@
 /** Issues des essais (section 5, point 5) et statistiques de séance (section 9). */
-import { rowOf } from '../calibration/grid';
-import { isFoot, type Touch } from './zones';
+import type { Touch } from './zones';
 
 export type Outcome =
   | 'hit'
@@ -12,8 +11,8 @@ export type Outcome =
   | 'anticipation';
 
 /**
- * Mode Classique : n'importe quel effecteur, sauf un pied sur les rangées haute et du milieu.
- * Priorité : anticipation > miss > wrong_zone > wrong_effector > hit.
+ * Mode Classique : seule la cible compte (`touch` = touche de la cible par un effecteur autorisé ;
+ * les zones traversées ne sont pas des erreurs). Priorité : anticipation > miss > hit.
  */
 export function classicOutcome(args: {
   targetZone: number;
@@ -22,9 +21,7 @@ export function classicOutcome(args: {
   anticipationMs: number;
 }): Outcome {
   if (args.rtMs !== null && args.rtMs < args.anticipationMs) return 'anticipation';
-  if (!args.touch) return 'miss';
-  if (args.touch.zone !== args.targetZone) return 'wrong_zone';
-  if (isFoot(args.touch.effector) && rowOf(args.targetZone) < 2) return 'wrong_effector';
+  if (!args.touch || args.touch.zone !== args.targetZone) return 'miss';
   return 'hit';
 }
 

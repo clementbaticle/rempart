@@ -13,7 +13,7 @@ import { uniform, type Rng } from '../core/random';
 import type { PlannedTrial } from '../core/sequence';
 import { bodySample, features, meanFeatures, movementCause, swayRatio, type BodySample, type Features, type InitiationCause } from './body';
 import { classicOutcome, type Outcome } from './outcome';
-import { handsInGuard, pickTouch, touchKey, touches, type Effector, type Touch } from './zones';
+import { handsInGuard, targetTouch, touchKey, touches, type Effector, type Touch } from './zones';
 
 export interface TrialParams {
   guardRadiusRatio: number;
@@ -25,6 +25,7 @@ export interface TrialParams {
   falseStartThresholdRatio: number;
   falseStartFrames: number;
   initiationThresholdRatio: number;
+  /** Délai pour atteindre la cible (ms) ; en mode Découverte, plafond de sécurité. */
   responseMs: number;
   anticipationMs: number;
   feedbackMs: number;
@@ -61,7 +62,10 @@ export interface TrialRecord {
   isGo: boolean;
   expectedEffector: 'any';
   usedEffector: Effector | null;
-  touchedZone: number | null;
+  /** Autres zones traversées avant d'atteindre la cible, dans l'ordre (pas des erreurs). */
+  crossedZones: number[];
+  /** Délai de réponse appliqué (ms). */
+  responseLimitMs: number;
   foreperiodPlannedMs: number;
   /** Délai réel entre le début de l'avant-période et l'apparition. */
   foreperiodActualMs: number;
@@ -144,6 +148,7 @@ export class TrialMachine {
    * sortis du cercle puis y être revenus (la touche est une ENTRÉE dans la cible).
    */
   private blocked = new Set<string>();
+  private crossed: number[] = [];
 
   constructor(
     private readonly plan: readonly PlannedTrial[],
@@ -225,7 +230,11 @@ export class TrialMachine {
           const all = touches(fr.points, this.grid, this.p.hitToleranceFactor);
           const current = new Set(all.map(touchKey));
           for (const k of this.blocked) if (!current.has(k)) this.blocked.delete(k); // sorti du cercle
-          const touch = pickTouch(all.filter((t) => !this.blocked.has(touchKey(t))), this.currentZone!);
+          const fresh = all.filter((t) => !this.blocked.has(touchKey(t)));
+          for (const t of fresh) {
+            if (t.zone !== this.currentZone && !this.crossed.includes(t.zone)) this.crossed.push(t.zone);
+          }
+          const touch = targetTouch(fresh, this.currentZone!);
           if (touch) {
             if (this.tInit === null) {
               this.tInit = fr.t;
@@ -253,6 +262,7 @@ export class TrialMachine {
     const base = window.length ? window : this.recent.slice(-1);
     this.baseline = meanFeatures(base.map((s) => s.f));
     this.blocked = new Set(touches(this.lastPrePoints, this.grid, this.p.hitToleranceFactor).map(touchKey));
+    this.crossed = [];
     this.tInit = null;
     this.initCause = null;
     this.lastPresented = null;
@@ -328,7 +338,8 @@ export class TrialMachine {
       isGo: true,
       expectedEffector: 'any',
       usedEffector: touch?.effector ?? null,
-      touchedZone: touch?.zone ?? null,
+      crossedZones: [...this.crossed],
+      responseLimitMs: this.p.responseMs,
       foreperiodPlannedMs: this.foreperiodMs,
       foreperiodActualMs: this.tStim - this.foreperiodStart,
       tStimulus: this.tStim,

@@ -8,7 +8,7 @@ import { mulberry32 } from '../core/random';
 import { bodySample, features, meanFeatures, movementCause, swayRatio } from './body';
 import { classicOutcome, quantile, summarize } from './outcome';
 import { TrialMachine, type MachineEvent } from './trialMachine';
-import { firstTouch, guardOverlaps, handsInGuard } from './zones';
+import { guardOverlaps, handsInGuard, targetTouch, touches } from './zones';
 
 const P = CONFIG.trial;
 const guard = measureGuard(makePose())!; // taille 400 px → seuil 20 px, rayon de garde 48 px
@@ -67,10 +67,12 @@ describe('zones', () => {
     expect(handsInGuard(bodySample(makePose({ arms: 'spread' })), guard, 48)).toBe(false);
   });
 
-  it('touche : la zone cible a priorité, sinon la zone touchée', () => {
-    expect(firstTouch(leftHandAt(makePose(), center(4)), grid, 1, 4)).toEqual({ zone: 4, effector: 'main-gauche' });
-    expect(firstTouch(leftHandAt(makePose(), center(4)), grid, 1, 1)).toEqual({ zone: 4, effector: 'main-gauche' });
-    expect(firstTouch(makePose(), grid, 1, 1)).toBeNull();
+  it('touche : seule la cible compte, pied seulement sur la rangée du bas', () => {
+    const at4 = touches(leftHandAt(makePose(), center(4)), grid, 1);
+    expect(targetTouch(at4, 4)).toEqual({ zone: 4, effector: 'main-gauche' });
+    expect(targetTouch(at4, 1)).toBeNull(); // une autre zone touchée n'est pas la cible
+    expect(targetTouch([{ zone: 1, effector: 'pied-gauche' }], 1)).toBeNull(); // pied sur la rangée du haut
+    expect(targetTouch([{ zone: 9, effector: 'pied-gauche' }], 9)).toEqual({ zone: 9, effector: 'pied-gauche' });
   });
 
   it('chevauchement garde / cible', () => {
@@ -84,9 +86,7 @@ describe('issues et statistiques', () => {
     const t = { zone: 1, effector: 'main-gauche' as const };
     expect(classicOutcome({ targetZone: 1, touch: t, rtMs: 100, anticipationMs: 150 })).toBe('anticipation');
     expect(classicOutcome({ targetZone: 1, touch: null, rtMs: 300, anticipationMs: 150 })).toBe('miss');
-    expect(classicOutcome({ targetZone: 2, touch: t, rtMs: 300, anticipationMs: 150 })).toBe('wrong_zone');
-    expect(classicOutcome({ targetZone: 1, touch: { zone: 1, effector: 'pied-gauche' }, rtMs: 300, anticipationMs: 150 })).toBe('wrong_effector');
-    expect(classicOutcome({ targetZone: 7, touch: { zone: 7, effector: 'pied-gauche' }, rtMs: 300, anticipationMs: 150 })).toBe('wrong_effector');
+    expect(classicOutcome({ targetZone: 1, touch: t, rtMs: 300, anticipationMs: 150 })).toBe('hit');
     expect(classicOutcome({ targetZone: 9, touch: { zone: 9, effector: 'pied-gauche' }, rtMs: 300, anticipationMs: 150 })).toBe('hit');
   });
 
@@ -216,13 +216,26 @@ describe('automate d’essai', () => {
     expect(d.m.records[0]!.rtMs).toBe(30);
   });
 
-  it('mauvaise zone touchée en premier', () => {
+  it('traverser d’autres zones pour atteindre la cible n’est pas une erreur', () => {
     const d = new Driver([1]);
     d.untilStimulus();
     for (let i = 0; i < 5; i++) d.frame(makePose());
-    d.frame(leftHandAt(makePose(), center(4)));
-    expect(d.m.records[0]!.outcome).toBe('wrong_zone');
-    expect(d.m.records[0]!.touchedZone).toBe(4);
+    d.frame(leftHandAt(makePose(), center(2))); // traverse la zone 2…
+    expect(d.m.phase).toBe('response');
+    d.frame(leftHandAt(makePose(), center(1))); // …puis atteint la cible 1
+    const r = d.m.records[0]!;
+    expect(r.outcome).toBe('hit');
+    expect(r.crossedZones).toEqual([2]);
+    expect(r.responseLimitMs).toBe(P.responseMs);
+  });
+
+  it('pied sur une cible haute : ignoré, puis délai dépassé', () => {
+    const d = new Driver([1]);
+    d.untilStimulus();
+    const footAt1 = makePose().map((q, i) => (i === 27 || i === 31 ? { ...center(1) } : q));
+    for (let i = 0; i < 5; i++) d.frame(makePose());
+    for (let i = 0; i < 60; i++) d.frame(footAt1);
+    expect(d.m.records[0]!.outcome).toBe('miss');
   });
 
   it('retour, intervalle puis essai suivant, puis fin', () => {
@@ -256,14 +269,17 @@ describe('automate d’essai', () => {
       for (const p of after) m.onFrame({ t: (t += 40), points: p, presentedFrames: null, visibility: 1 }, t);
       return m;
     };
-    // Main restée dans la zone 6 : aucune touche, puis touche de la cible 1 → réussite.
+    // Main restée dans la zone 6 : aucune zone traversée ; puis touche de la cible 1 → réussite.
     const a = run([makePose(), makePose(), makePose(), makePose(), makePose(), leftHandAt(makePose(), zone(1))]);
     expect(a.records[0]!.outcome).toBe('hit');
-    expect(a.records[0]!.touchedZone).toBe(1);
-    // Main qui sort de la zone 6 puis y revient : c'est une entrée → mauvaise zone.
-    const b = run([makePose(), makePose(), makePose(), makePose(), moveLeftHand(makePose(), -100, -100), makePose()]);
-    expect(b.records[0]!.outcome).toBe('wrong_zone');
-    expect(b.records[0]!.touchedZone).toBe(6);
+    expect(a.records[0]!.crossedZones).toEqual([]);
+    // Main qui sort de la zone 6 puis y revient : c'est une entrée → zone traversée (pas une erreur).
+    const b = run([
+      makePose(), makePose(), makePose(), makePose(), moveLeftHand(makePose(), -100, -100), makePose(),
+      leftHandAt(makePose(), zone(1)),
+    ]);
+    expect(b.records[0]!.outcome).toBe('hit');
+    expect(b.records[0]!.crossedZones).toEqual([6]);
   });
 
   it('petits mouvements et sauts isolés pendant l’attente : pas de faux départ', () => {
