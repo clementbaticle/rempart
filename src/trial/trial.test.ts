@@ -388,4 +388,15 @@ describe('automate d’essai', () => {
       [1, 400, 2, 2], [2, null, 0, 1], [3, null, 0, 0], [4, null, 0, 0],
     ]);
   });
+
+  it('retour en garde qui ralentit : l’avant-période attend une garde stabilisée, sans faux départ', () => {
+    const d = new Driver([1], 1400);
+    // Main qui revient dans la zone de garde en ralentissant (dans le cercle de garde de 48 px).
+    for (const dx of [-40, -30, -22, -15, -10, -6, -3, -1]) d.frame(moveLeftHand(makePose(), dx, 0));
+    expect(d.m.phase).toBe('waitGuard'); // encore en mouvement : on attend
+    for (let i = 0; i < 12; i++) d.frame(makePose());
+    expect(d.m.phase).toBe('foreperiod');
+    for (let i = 0; i < 20; i++) d.frame(makePose());
+    expect(d.events.some((e) => e.type === 'falseStart')).toBe(false);
+  });
 });

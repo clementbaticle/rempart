@@ -126,6 +126,13 @@ export const CONFIG = {
     guardRadiusRatio: 0.12,
     /** Présence des deux mains dans la zone de garde exigée avant l'avant-période (ms). */
     guardPresenceMs: 150,
+    /**
+     * Garde stabilisée avant l'avant-période : sur cette durée (ms), aucun repère ne s'écarte de sa
+     * position moyenne de plus de `settleToleranceRatio` × taille apparente. Évite les faux départs
+     * dus au retour en garde après la touche.
+     */
+    settleMs: 300,
+    settleToleranceRatio: 0.04,
     foreperiodMinMs: 600,
     foreperiodMaxMs: 1500,
     /** Référence de position : moyenne sur cette durée avant l'apparition (ms). */

@@ -19,6 +19,8 @@ import { handsInGuard, targetTouch, touchKey, touches, type Effector, type Touch
 export interface TrialParams {
   guardRadiusRatio: number;
   guardPresenceMs: number;
+  settleMs: number;
+  settleToleranceRatio: number;
   foreperiodMinMs: number;
   foreperiodMaxMs: number;
   baselineMs: number;
@@ -196,7 +198,11 @@ export class TrialMachine {
         this.remember(fr.t, f);
         if (handsInGuard(body, this.guard, this.guardRadiusPx)) {
           this.guardSince ??= fr.t;
-          if (fr.t - this.guardSince >= this.p.guardPresenceMs) this.startForeperiod(fr.t);
+          // Mains en garde depuis assez longtemps ET garde stabilisée (fin du retour en garde).
+          const inGuardMs = fr.t - this.guardSince;
+          if (inGuardMs >= Math.max(this.p.guardPresenceMs, this.p.settleMs) && this.isSettled(fr.t)) {
+            this.startForeperiod(fr.t);
+          }
         } else {
           this.guardSince = null;
         }
@@ -336,6 +342,15 @@ export class TrialMachine {
     if (this.falseStartStreak < this.p.falseStartFrames) return false;
     this.falseStartStreak = 0;
     return true;
+  }
+
+  /** Garde stabilisée : sur les `settleMs` dernières ms, plus aucun mouvement notable. */
+  private isSettled(t: number): boolean {
+    const win = this.recent.filter((s) => s.t >= t - this.p.settleMs && s.t <= t);
+    if (win.length < 3) return false;
+    const mean = meanFeatures(win.map((s) => s.f));
+    const tol = this.p.settleToleranceRatio * this.guard.heightPx;
+    return win.every((s) => movementAmplitude(s.f, mean) <= tol);
   }
 
   private startForeperiod(t: number): void {
