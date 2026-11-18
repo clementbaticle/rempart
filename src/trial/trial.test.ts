@@ -156,7 +156,7 @@ class Driver {
   constructor(zones: number[], foreperiodMs = 1000) {
     this.m = new TrialMachine(
       zones.map((z) => ({
-        zone: Math.abs(z), foreperiodMs, isGo: z > 0, game: z > 0 ? 'classique' : 'gonogo', block: 1, analyzed: true,
+        zone: Math.abs(z), foreperiodMs, isGo: z > 0, cueMs: null, game: z > 0 ? 'classique' : 'gonogo', block: 1, analyzed: true,
       })),
       guard, grid, P, mulberry32(1), (e) => this.events.push(e),
     );
@@ -299,7 +299,7 @@ describe('automate d’essai', () => {
     const run = (after: Points[]) => {
       const events: MachineEvent[] = [];
       const m = new TrialMachine(
-        [{ zone: 1, foreperiodMs: 1000, isGo: true, game: 'classique', block: 1, analyzed: true }],
+        [{ zone: 1, foreperiodMs: 1000, isGo: true, cueMs: null, game: 'classique', block: 1, analyzed: true }],
         guard, tight, P, mulberry32(1), (e) => events.push(e),
       );
       let t = 1000;
@@ -398,5 +398,100 @@ describe('automate d’essai', () => {
     expect(d.m.phase).toBe('foreperiod');
     for (let i = 0; i < 20; i++) d.frame(makePose());
     expect(d.events.some((e) => e.type === 'falseStart')).toBe(false);
+  });
+
+  describe('cible blanche puis couleur', () => {
+    /** Machine à un essai blanc (300 ms) → vert ou rouge ; images toutes les 40 ms. */
+    function cuedRun(isGo: boolean) {
+      const events: MachineEvent[] = [];
+      const m = new TrialMachine(
+        [{ zone: 1, foreperiodMs: 1000, isGo, cueMs: 300, game: 'gonogo', block: 2, analyzed: true }],
+        guard, grid, P, mulberry32(1), (e) => events.push(e),
+      );
+      let t = 1000;
+      const frame = (p: Points): void => m.onFrame({ t: (t += 40), points: p, presentedFrames: null, visibility: 1 }, t);
+      while (m.phase !== 'stimulus') frame(makePose());
+      const tCue = t + 10;
+      m.stimulusShown(tCue, tCue - 5);
+      return { m, frame, tCue, now: () => t };
+    }
+
+    it('blanc → vert : attendre le vert puis toucher = réussite, TR depuis le vert', () => {
+      const r = cuedRun(true);
+      expect(r.m.phase).toBe('cue');
+      for (let i = 0; i < 8; i++) r.frame(makePose()); // 320 ms de blanc, sans partir
+      expect(r.m.phase).toBe('colorPending');
+      const tColor = r.now() + 5;
+      r.m.colorShown(tColor, tColor - 3);
+      for (let i = 0; i < 5; i++) r.frame(makePose());
+      r.frame(moveLeftHand(makePose(), -40, -30)); // départ
+      r.frame(leftHandAt(makePose(), center(1)));
+      const rec = r.m.records[0]!;
+      expect(rec.outcome).toBe('hit');
+      expect(rec.cued).toBe(true);
+      expect(rec.tStimulus).toBe(tColor);
+      expect(rec.rtMs).toBe(r.now() - 40 - tColor);
+      expect(rec.cueActualMs).toBe(tColor - r.tCue);
+      expect(rec.initFromCueMs).toBe(r.now() - 40 - r.tCue);
+    });
+
+    it('blanc → vert : partir pendant le blanc = anticipation', () => {
+      const r = cuedRun(true);
+      r.frame(makePose());
+      r.frame(moveLeftHand(makePose(), -40, -30)); // part sur le blanc
+      for (let i = 0; i < 6; i++) r.frame(moveLeftHand(makePose(), -40, -30));
+      const tColor = r.now() + 5;
+      r.m.colorShown(tColor, tColor - 3);
+      r.frame(leftHandAt(makePose(), center(1)));
+      const rec = r.m.records[0]!;
+      expect(rec.outcome).toBe('anticipation');
+      expect(rec.rtMs!).toBeLessThan(0);
+    });
+
+    it('blanc → rouge : partir pendant le blanc = commission immédiate, même sans toucher', () => {
+      const r = cuedRun(false);
+      r.frame(makePose());
+      r.frame(moveLeftHand(makePose(), -40, 0)); // prend la feinte
+      const rec = r.m.records[0]!;
+      expect(rec.outcome).toBe('commission');
+      expect(rec.tStimulus).toBeNull(); // le rouge n'a jamais eu besoin d'apparaître
+      expect(rec.rtMs).toBeNull();
+      expect(rec.initFromCueMs).toBe(r.now() - r.tCue);
+      expect(r.m.phase).toBe('feedback');
+    });
+
+    it('blanc → rouge : se préparer sans partir puis rester = rejet correct', () => {
+      const r = cuedRun(false);
+      for (let i = 0; i < 8; i++) r.frame(moveLeftHand(makePose(), -10, -5)); // petite préparation (< 5 %)
+      const tColor = r.now() + 5;
+      r.m.colorShown(tColor, tColor - 3);
+      for (let i = 0; i < 45; i++) r.frame(moveLeftHand(makePose(), -10, -5));
+      const rec = r.m.records[0]!;
+      expect(rec.outcome).toBe('correct_rejection');
+      expect(rec.maxMovementRatio).toBeCloseTo(Math.hypot(10, 5) / 400);
+    });
+
+    it('blanc → rouge : partir après le rouge = commission', () => {
+      const r = cuedRun(false);
+      for (let i = 0; i < 8; i++) r.frame(makePose());
+      const tColor = r.now() + 5;
+      r.m.colorShown(tColor, tColor - 3);
+      r.frame(makePose());
+      r.frame(moveLeftHand(makePose(), -40, 0));
+      expect(r.m.records[0]!.outcome).toBe('commission');
+      expect(r.m.records[0]!.rtMs).toBe(r.now() - tColor);
+    });
+  });
+
+  it('résumé : TR des verts directs et des blanc → vert séparés', () => {
+    const s = summarize(
+      [
+        { outcome: 'hit', rtMs: 300, mtMs: 100, falseStarts: 0, cued: false },
+        { outcome: 'hit', rtMs: 320, mtMs: 100, falseStarts: 0, cued: false },
+        { outcome: 'hit', rtMs: 420, mtMs: 100, falseStarts: 0, cued: true },
+      ],
+      { minMs: 150, maxMs: 1500 },
+    );
+    expect([s.rtMedianDirect, s.rtMedianCued]).toEqual([310, 420]);
   });
 });

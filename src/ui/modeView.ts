@@ -47,7 +47,7 @@ export function renderModes(
           <button class="mode mode--test" type="button" data-mode="test">
             <span class="mode__kicker">Mesurer</span>
             <span class="mode__name">Test</span>
-            <span class="mode__desc">Batterie figée : Classique puis Go / no-go (48 essais, ≈ 3 min). Seul mode utilisé pour l’étude.</span>
+            <span class="mode__desc">Batterie figée : Classique puis Go / no-go (54 essais, ≈ 3 min 30). Seul mode utilisé pour l’étude.</span>
             <span class="mode__time">${seconds(P.testResponseMs)} s</span>
           </button>
           <div class="mode mode--train">

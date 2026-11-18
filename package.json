@@ -1,7 +1,7 @@
 {
   "name": "rempart",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "description": "Entraînement et évaluation perceptivo-cognitive des gardiennes du TMVH",
   "scripts": {

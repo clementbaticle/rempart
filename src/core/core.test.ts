@@ -48,13 +48,19 @@ describe('séquence Classique', () => {
     }
   });
 
-  it('Go / no-go : 18 essais (12 go + 6 no-go), au plus 2 no-go de suite', () => {
+  it('Go / no-go : 24 essais (12 verts directs + 6 blanc → vert + 6 blanc → rouge), au plus 2 rouges de suite', () => {
+    const sorted = [...T.noGoZones].sort((a, b) => a - b);
     for (const seed of [1, 7, 42, 2026]) {
-      const s = goNoGoBlock(seed, { ...P, noGoZones: T.noGoZones, maxNoGoInARow: 2 });
-      expect(s).toHaveLength(18);
-      expect(s.filter((t) => t.isGo)).toHaveLength(12);
-      expect(new Set(s.filter((t) => t.isGo).map((t) => t.zone)).size).toBe(12);
-      expect(s.filter((t) => !t.isGo).map((t) => t.zone).sort((a, b) => a - b)).toEqual([...T.noGoZones].sort((a, b) => a - b));
+      const s = goNoGoBlock(seed, { ...P, noGoZones: T.noGoZones, maxNoGoInARow: 2, cueMinMs: 150, cueMaxMs: 400 });
+      expect(s).toHaveLength(24);
+      const direct = s.filter((t) => t.isGo && t.cueMs === null);
+      const cuedGo = s.filter((t) => t.isGo && t.cueMs !== null);
+      const cuedRed = s.filter((t) => !t.isGo);
+      expect(new Set(direct.map((t) => t.zone)).size).toBe(12);
+      expect(cuedGo.map((t) => t.zone).sort((a, b) => a - b)).toEqual(sorted);
+      expect(cuedRed.map((t) => t.zone).sort((a, b) => a - b)).toEqual(sorted);
+      cuedRed.forEach((t) => expect(t.cueMs).not.toBeNull()); // tout rouge passe par le blanc
+      [...cuedGo, ...cuedRed].forEach((t) => expect(t.cueMs! >= 150 && t.cueMs! <= 400).toBe(true));
       let run = 0;
       let best = 0;
       for (const t of s) {
@@ -79,13 +85,15 @@ describe('séquence Classique', () => {
     f.forEach((t) => expect([t.block, t.analyzed]).toEqual([0, false]));
   });
 
-  it('batterie Test v1 : 6 + 24 + 18 = 48 essais, toujours identique', () => {
+  it('batterie Test v2 : 6 + 24 + 24 = 54 essais, toujours identique', () => {
     const a = testBattery(BATTERY);
-    expect(a).toHaveLength(48);
-    expect(a.map((t) => t.block)).toEqual([...Array(6).fill(0), ...Array(24).fill(1), ...Array(18).fill(2)]);
+    expect(BATTERY.version).toBe('v2');
+    expect(a).toHaveLength(54);
+    expect(a.map((t) => t.block)).toEqual([...Array(6).fill(0), ...Array(24).fill(1), ...Array(24).fill(2)]);
     expect(testBattery(BATTERY)).toEqual(a);
     // Empreinte figée : si elle change, la séquence du mode Test a changé (changer aussi la version).
     expect(a.slice(0, 8).map((t) => `${t.zone}${t.isGo ? '' : 'x'}:${t.foreperiodMs}`).join(' ')).toMatchSnapshot();
+    expect(a.slice(30, 38).map((t) => `${t.zone}${t.isGo ? '' : 'x'}${t.cueMs === null ? '' : `/${t.cueMs}`}:${t.foreperiodMs}`).join(' ')).toMatchSnapshot();
   });
 
   it('reproductible avec la même graine', () => {

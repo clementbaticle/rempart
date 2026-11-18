@@ -119,7 +119,10 @@ export function renderResults(
     const g = gonogo ?? s;
     stats.append(tile(pct(g.commissionRate), '%', `Commissions (${g.commissions}/${g.noGoTrials})`));
   }
-  if (gonogo) stats.append(tile(ms(gonogo.rtMedian), 'ms', 'TR · Go / no-go'));
+  if (gonogo) {
+    stats.append(tile(ms(gonogo.rtMedianDirect), 'ms', 'TR · vert direct'));
+    stats.append(tile(ms(gonogo.rtMedianCued), 'ms', 'TR · blanc → vert'));
+  }
   stats.append(tile(ms(go.mtMedian), 'ms', 'Mouvement'));
   stats.append(tile(String(s.falseStarts), '', 'Faux départs'));
   stats.append(tile(session.meanDetectionFps == null ? '—' : session.meanDetectionFps.toFixed(0), 'i/s', 'Détection'));

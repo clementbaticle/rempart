@@ -14,6 +14,11 @@ export interface PlannedTrial {
   foreperiodMs: number;
   /** Cible go (verte, à toucher) ou no-go (rouge, ne pas bouger). */
   isGo: boolean;
+  /**
+   * Durée de la cible blanche avant la couleur (ms) ; null = couleur immédiate (vert direct).
+   * Go / no-go : blanc → vert ou blanc → rouge.
+   */
+  cueMs: number | null;
   game: Game;
   /** N° de bloc dans la séance (0 = familiarisation). */
   block: number;
@@ -60,29 +65,46 @@ export function classicBlock(
   const rng = mulberry32(seed);
   const pool = Array.from({ length: ZONE_COUNT * p.repeats }, (_, i) => (i % ZONE_COUNT) + 1);
   const zones = shuffleUntil(rng, pool, (s) => longestRun(s) <= p.maxInARow);
-  return zones.map((zone) => ({ zone, foreperiodMs: foreperiod(rng, p), isGo: true, game: 'classique', block, analyzed: true }));
+  return zones.map((zone) => ({
+    zone, foreperiodMs: foreperiod(rng, p), isGo: true, cueMs: null, game: 'classique', block, analyzed: true,
+  }));
+}
+
+export interface GoNoGoParams extends ForeperiodParams {
+  /** Zones des essais précédés d'une cible blanche (blanc → vert et blanc → rouge). */
+  noGoZones: readonly number[];
+  maxInARow: number;
+  maxNoGoInARow: number;
+  cueMinMs: number;
+  cueMaxMs: number;
 }
 
 /**
- * Bloc Go / no-go : chaque zone une fois en go + les zones `noGoZones` en no-go ;
- * au plus `maxInARow` fois de suite la même zone et `maxNoGoInARow` no-go de suite.
+ * Bloc Go / no-go : chaque zone une fois en vert direct ; sur chaque zone de `noGoZones`,
+ * un blanc → vert et un blanc → rouge (le blanc annonce le rouge une fois sur deux).
+ * Au plus `maxInARow` fois de suite la même zone et `maxNoGoInARow` rouges de suite.
  */
-export function goNoGoBlock(
-  seed: number,
-  p: ForeperiodParams & { noGoZones: readonly number[]; maxInARow: number; maxNoGoInARow: number },
-  block = 1,
-): PlannedTrial[] {
+export function goNoGoBlock(seed: number, p: GoNoGoParams, block = 1): PlannedTrial[] {
   const rng = mulberry32(seed);
   const pool = [
-    ...Array.from({ length: ZONE_COUNT }, (_, i) => ({ zone: i + 1, isGo: true })),
-    ...p.noGoZones.map((zone) => ({ zone, isGo: false })),
+    ...Array.from({ length: ZONE_COUNT }, (_, i) => ({ zone: i + 1, isGo: true, cued: false })),
+    ...p.noGoZones.map((zone) => ({ zone, isGo: true, cued: true })),
+    ...p.noGoZones.map((zone) => ({ zone, isGo: false, cued: true })),
   ];
   const items = shuffleUntil(
     rng,
     pool,
     (s) => longestRun(s.map((t) => t.zone)) <= p.maxInARow && longestNoGo(s) <= p.maxNoGoInARow,
   );
-  return items.map(({ zone, isGo }) => ({ zone, foreperiodMs: foreperiod(rng, p), isGo, game: 'gonogo', block, analyzed: true }));
+  return items.map(({ zone, isGo, cued }) => ({
+    zone,
+    foreperiodMs: foreperiod(rng, p),
+    isGo,
+    cueMs: cued ? Math.round(uniform(rng, p.cueMinMs, p.cueMaxMs)) : null,
+    game: 'gonogo',
+    block,
+    analyzed: true,
+  }));
 }
 
 function longestNoGo(s: readonly { isGo: boolean }[]): number {
@@ -99,7 +121,9 @@ function longestNoGo(s: readonly { isGo: boolean }[]): number {
 export function familiarisationBlock(seed: number, count: number, p: ForeperiodParams): PlannedTrial[] {
   const rng = mulberry32(seed);
   const zones = shuffle(rng, Array.from({ length: ZONE_COUNT }, (_, i) => i + 1)).slice(0, count);
-  return zones.map((zone) => ({ zone, foreperiodMs: foreperiod(rng, p), isGo: true, game: 'classique', block: 0, analyzed: false }));
+  return zones.map((zone) => ({
+    zone, foreperiodMs: foreperiod(rng, p), isGo: true, cueMs: null, game: 'classique', block: 0, analyzed: false,
+  }));
 }
 
 export interface BatteryDef extends ForeperiodParams {
@@ -110,6 +134,8 @@ export interface BatteryDef extends ForeperiodParams {
   noGoZones: readonly number[];
   maxSameZoneInARow: number;
   maxNoGoInARow: number;
+  cueMinMs: number;
+  cueMaxMs: number;
 }
 
 /** Batterie du mode Test : familiarisation, bloc 1 Classique, bloc 2 Go / no-go (toujours identique). */

@@ -169,6 +169,9 @@ export const CONFIG = {
      */
     noGoZones: [1, 4, 6, 7, 9, 11],
     maxNoGoInARow: 2,
+    /** Durée de la cible blanche avant la couleur (ms), tirée au hasard dans la séquence. */
+    cueMinMs: 150,
+    cueMaxMs: 400,
   },
 
   /** Modes de temps (section 7) : délai pour atteindre la cible. PARAMÈTRES DE MESURE pour le mode Test. */
@@ -186,7 +189,7 @@ export const CONFIG = {
    * paramètre change la séquence ; il faut alors changer aussi `version`.
    */
   battery: {
-    version: 'v1',
+    version: 'v2',
     familiarisation: 6,
     seeds: { familiarisation: 20260101, classique: 20260102, gonogo: 20260103 },
     /** Pause entre deux blocs (ms). */

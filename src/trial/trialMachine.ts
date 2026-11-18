@@ -38,7 +38,12 @@ export interface TrialParams {
   hitToleranceFactor: number;
 }
 
-export type Phase = 'waitGuard' | 'foreperiod' | 'stimulus' | 'response' | 'feedback' | 'iti' | 'done';
+/**
+ * stimulus : cible demandée (dessinée au prochain rafraîchissement) ;
+ * cue : cible blanche affichée (Go / no-go préparé) ; colorPending : couleur demandée ;
+ * response : cible colorée affichée, réponse attendue.
+ */
+export type Phase = 'waitGuard' | 'foreperiod' | 'stimulus' | 'cue' | 'colorPending' | 'response' | 'feedback' | 'iti' | 'done';
 
 export interface FrameInput {
   /** Horodatage de capture de l'image (ms). */
@@ -67,6 +72,16 @@ export interface TrialRecord {
   zone: number;
   stimulus: 'go' | 'nogo';
   isGo: boolean;
+  /** Essai précédé d'une cible blanche (blanc → vert / blanc → rouge). */
+  cued: boolean;
+  /** Durée prévue de la cible blanche (ms), null sans blanc. */
+  cueMsPlanned: number | null;
+  /** Apparition de la cible blanche (horloge performance), null sans blanc. */
+  tCue: number | null;
+  /** Délai réel blanc → couleur (ms). */
+  cueActualMs: number | null;
+  /** Départ mesuré depuis l'apparition de la cible blanche (ms). */
+  initFromCueMs: number | null;
   expectedEffector: 'any';
   usedEffector: Effector | null;
   /** Autres zones traversées avant d'atteindre la cible, dans l'ordre (pas des erreurs). */
@@ -76,8 +91,9 @@ export interface TrialRecord {
   foreperiodPlannedMs: number;
   /** Délai réel entre le début de l'avant-période et l'apparition. */
   foreperiodActualMs: number;
-  tStimulus: number;
-  tStimulusRaf: number;
+  /** Apparition de la couleur (cible verte / rouge) ; null si l'essai s'arrête pendant le blanc. */
+  tStimulus: number | null;
+  tStimulusRaf: number | null;
   tInitiation: number | null;
   initiationCause: InitiationCause | null;
   tTouch: number | null;
@@ -159,6 +175,7 @@ export class TrialMachine {
   private blocked = new Set<string>();
   private crossed: number[] = [];
   private maxMovementPx = 0;
+  private tCue: number | null = null;
 
   constructor(
     private readonly plan: readonly PlannedTrial[],
@@ -182,6 +199,11 @@ export class TrialMachine {
   /** Essai en cours : go (cible verte) ou no-go (cible rouge). */
   get isGo(): boolean {
     return this.plan[this.index]?.isGo ?? true;
+  }
+
+  /** Durée de la cible blanche de l'essai en cours, null = couleur immédiate. */
+  get cueMs(): number | null {
+    return this.plan[this.index]?.cueMs ?? null;
   }
 
   get currentTrial(): PlannedTrial | null {
@@ -225,6 +247,26 @@ export class TrialMachine {
           this.phase = 'stimulus';
           this.emit({ type: 'stimulusRequested', index: this.index, zone: this.currentZone! });
         }
+        break;
+
+      case 'cue':
+      case 'colorPending':
+        // Cible blanche : la gardienne se prépare, mais un vrai départ est déjà mesuré.
+        this.trajectory.push(trajectoryRow(fr.t, body));
+        if (fr.t < (this.tCue ?? Infinity)) {
+          this.remember(fr.t, f);
+          break;
+        }
+        this.maxMovementPx = Math.max(this.maxMovementPx, movementAmplitude(f, this.baseline));
+        if (this.tInit === null) {
+          const cause = movementCause(f, this.baseline, this.thresholdPx);
+          if (cause) {
+            this.tInit = fr.t;
+            this.initCause = cause;
+          }
+        }
+        // Blanc → rouge : partir pendant le blanc, c'est déjà prendre la feinte.
+        if (!this.isGo && this.tInit !== null) this.finish(null, null, now);
         break;
 
       case 'response':
@@ -286,8 +328,12 @@ export class TrialMachine {
   /** Appelé dans le requestAnimationFrame qui dessine la cible. */
   stimulusShown(tPerf: number, tRaf: number): void {
     if (this.phase !== 'stimulus') return;
-    this.tStim = tPerf;
-    this.tStimRaf = tRaf;
+    const cued = this.cueMs !== null;
+    // Avec cible blanche : la couleur viendra plus tard (colorShown) ; la référence de position
+    // reste celle d'avant la cible blanche.
+    this.tCue = cued ? tPerf : null;
+    this.tStim = cued ? Number.NaN : tPerf;
+    this.tStimRaf = cued ? Number.NaN : tRaf;
     const window = this.recent.filter((s) => s.t >= tPerf - this.p.baselineMs && s.t < tPerf);
     const base = window.length ? window : this.recent.slice(-1);
     this.baseline = meanFeatures(base.map((s) => s.f));
@@ -300,13 +346,24 @@ export class TrialMachine {
     this.dropped = 0;
     this.responseFrames = 0;
     this.visSum = 0;
+    this.phase = cued ? 'cue' : 'response';
+  }
+
+  /** Appelé dans le requestAnimationFrame qui colore la cible blanche (vert ou rouge). */
+  colorShown(tPerf: number, tRaf: number): void {
+    if (this.phase !== 'colorPending') return;
+    this.tStim = tPerf;
+    this.tStimRaf = tRaf;
+    this.blocked = new Set(touches(this.lastPrePoints, this.grid, this.p.hitToleranceFactor).map(touchKey));
     this.phase = 'response';
   }
 
   /** Minuteries (retour, intervalle, délai de réponse sans image). */
   tick(now: number): void {
     const limit = this.isGo ? this.p.responseMs : this.p.noGoWindowMs;
-    if (this.phase === 'response' && now - this.tStim > limit + 500) {
+    if (this.phase === 'cue' && this.tCue !== null && now - this.tCue >= (this.cueMs ?? 0)) {
+      this.phase = 'colorPending'; // la vue colore la cible au prochain rafraîchissement
+    } else if (this.phase === 'response' && now - this.tStim > limit + 500) {
       this.finish(null, null, now); // plus aucune image : délai dépassé
     } else if (this.phase === 'feedback' && now >= this.phaseUntil) {
       this.phase = 'iti';
@@ -368,11 +425,14 @@ export class TrialMachine {
 
   private finish(touch: Touch | null, tTouch: number | null, now: number): void {
     const planned = this.plan[this.index]!;
-    const rt = this.tInit === null ? null : this.tInit - this.tStim;
-    const total = tTouch === null ? null : tTouch - this.tStim;
+    const colorShownAt = Number.isNaN(this.tStim) ? null : this.tStim;
+    // TR mesuré depuis la couleur ; négatif si départ pendant le blanc ; null si la couleur n'est jamais venue.
+    const rt = this.tInit === null || colorShownAt === null ? null : this.tInit - colorShownAt;
+    const total = tTouch === null || colorShownAt === null ? null : tTouch - colorShownAt;
     const outcome = planned.isGo
       ? classicOutcome({ targetZone: planned.zone, touch, rtMs: rt, anticipationMs: this.p.anticipationMs })
       : noGoOutcome(this.tInit !== null);
+    const cueStart = this.tCue;
     const record: TrialRecord = {
       index: this.index + 1,
       block: planned.block,
@@ -381,14 +441,19 @@ export class TrialMachine {
       zone: planned.zone,
       stimulus: planned.isGo ? 'go' : 'nogo',
       isGo: planned.isGo,
+      cued: planned.cueMs !== null,
+      cueMsPlanned: planned.cueMs,
+      tCue: cueStart,
+      cueActualMs: cueStart !== null && colorShownAt !== null ? colorShownAt - cueStart : null,
+      initFromCueMs: cueStart !== null && this.tInit !== null ? this.tInit - cueStart : null,
       expectedEffector: 'any',
       usedEffector: touch?.effector ?? null,
       crossedZones: [...this.crossed],
       responseLimitMs: planned.isGo ? this.p.responseMs : this.p.noGoWindowMs,
       foreperiodPlannedMs: this.foreperiodMs,
       foreperiodActualMs: this.tStim - this.foreperiodStart,
-      tStimulus: this.tStim,
-      tStimulusRaf: this.tStimRaf,
+      tStimulus: colorShownAt,
+      tStimulusRaf: Number.isNaN(this.tStimRaf) ? null : this.tStimRaf,
       tInitiation: this.tInit,
       initiationCause: this.initCause,
       tTouch,

@@ -40,6 +40,7 @@ function sessionCells(s: SessionRecord, p: Player | undefined, c: CalibrationRec
 
 const TRIAL_COLUMNS = [
   'essai', 'bloc', 'analyse', 'jeu_essai', 'zone', 'stimulus', 'go',
+  'cible_blanche', 'blanc_prevu_ms', 'blanc_reel_ms', 't_blanc', 'depart_depuis_blanc_ms',
   'avant_periode_prevue_ms', 'avant_periode_reelle_ms', 't_stimulus', 't_stimulus_raf',
   't_initiation', 'cause_initiation', 't_touche', 'tr_ms', 'tm_ms', 'total_ms', 'issue',
   'effecteur', 'zones_traversees', 'faux_departs', 'amplitude_max', 'visibilite_moy', 'images_perdues', 'balancement',
@@ -48,6 +49,7 @@ const TRIAL_COLUMNS = [
 function trialCells(t: TrialRow): Cell[] {
   return [
     t.index, t.block, t.analyzed ?? true, t.game ?? 'classique', t.zone, t.stimulus, t.isGo,
+    t.cued ?? false, t.cueMsPlanned, t.cueActualMs, t.tCue, t.initFromCueMs,
     t.foreperiodPlannedMs, t.foreperiodActualMs, t.tStimulus, t.tStimulusRaf,
     t.tInitiation, t.initiationCause, t.tTouch, t.rtMs, t.mtMs, t.totalMs, t.outcome,
     t.usedEffector, (t.crossedZones ?? []).join(';'), t.falseStarts, t.maxMovementRatio,
@@ -82,6 +84,7 @@ const SUMMARY_FIELDS = [
   ['anticipations', 'anticipations'], ['non_atteintes', 'misses'], ['essais_nogo', 'noGoTrials'],
   ['commissions', 'commissions'], ['taux_commission', 'commissionRate'], ['faux_departs', 'falseStarts'],
   ['tr_median_ms', 'rtMedian'], ['tr_eiq_ms', 'rtIqr'], ['tm_median_ms', 'mtMedian'],
+  ['tr_median_vert_direct_ms', 'rtMedianDirect'], ['tr_median_blanc_vert_ms', 'rtMedianCued'],
   ['tr_retenus', 'rtIncluded'], ['tr_exclus', 'rtExcluded'],
 ] as const;
 

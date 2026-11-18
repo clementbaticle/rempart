@@ -65,9 +65,10 @@ export function renderTrials(
   const fp = { foreperiodMinMs: T.foreperiodMinMs, foreperiodMaxMs: T.foreperiodMaxMs };
   const plan: PlannedTrial[] = isBattery
     ? testBattery({ ...CONFIG.battery, ...fp, classicRepeatsPerZone: T.classicRepeatsPerZone, noGoZones: T.noGoZones,
-        maxSameZoneInARow: T.maxSameZoneInARow, maxNoGoInARow: T.maxNoGoInARow })
+        maxSameZoneInARow: T.maxSameZoneInARow, maxNoGoInARow: T.maxNoGoInARow, cueMinMs: T.cueMinMs, cueMaxMs: T.cueMaxMs })
     : choice.game === 'gonogo'
-      ? goNoGoBlock(seed, { ...fp, noGoZones: T.noGoZones, maxInARow: T.maxSameZoneInARow, maxNoGoInARow: T.maxNoGoInARow })
+      ? goNoGoBlock(seed, { ...fp, noGoZones: T.noGoZones, maxInARow: T.maxSameZoneInARow, maxNoGoInARow: T.maxNoGoInARow,
+          cueMinMs: T.cueMinMs, cueMaxMs: T.cueMaxMs })
       : classicBlock(seed, { ...fp, repeats: T.classicRepeatsPerZone, maxInARow: T.maxSameZoneInARow });
   const blockSizes = new Map<number, number>();
   plan.forEach((t) => blockSizes.set(t.block, (blockSizes.get(t.block) ?? 0) + 1));
@@ -163,13 +164,20 @@ export function renderTrials(
     const now = performance.now();
     machine.tick(now);
     const phase = machine.phase;
-    if (phase === 'stimulus' && !targetDrawn) {
-      const zone = calibration.grid.zones.find((z) => z.id === machine.currentZone)!;
+    const zone = calibration.grid.zones.find((z) => z.id === machine.currentZone);
+    const color = machine.isGo ? 'go' : 'noGo';
+    if (phase === 'stimulus' && !targetDrawn && zone) {
+      // Cible blanche (préparation) si l'essai en comporte une, sinon directement la couleur.
       layer.clear();
-      drawTarget(layer.ctx, zone.center, calibration.grid.targetRadiusPx, machine.isGo ? 'go' : 'noGo', video, layer.rect);
+      drawTarget(layer.ctx, zone.center, calibration.grid.targetRadiusPx, machine.cueMs !== null ? 'cue' : color, video, layer.rect);
       targetDrawn = true;
       machine.stimulusShown(performance.now(), rafTs);
-    } else if (targetDrawn && phase !== 'stimulus' && phase !== 'response') {
+    } else if (phase === 'colorPending' && zone) {
+      // La cible blanche devient verte ou rouge : horodatage de la couleur dans ce rafraîchissement.
+      layer.clear();
+      drawTarget(layer.ctx, zone.center, calibration.grid.targetRadiusPx, color, video, layer.rect);
+      machine.colorShown(performance.now(), rafTs);
+    } else if (targetDrawn && !['stimulus', 'cue', 'colorPending', 'response'].includes(phase)) {
       layer.clear();
       targetDrawn = false;
     }
@@ -302,7 +310,7 @@ export function renderTrials(
     const el = $('.trial__countdown');
     const end = performance.now() + CONFIG.battery.pauseMs;
     const title = `Pause — bloc ${next.block} : ${GAME_LABELS[next.game]}`;
-    const hint = next.game === 'gonogo' ? 'Vert ● : touche · Rouge ✕ : ne bouge pas' : '';
+    const hint = next.game === 'gonogo' ? 'Blanc ○ : prépare-toi sans partir · Vert ● : vas-y · Rouge ✕ : ne bouge pas' : '';
     el.hidden = false;
     el.classList.add('is-pause');
     let lastBeep = -1;

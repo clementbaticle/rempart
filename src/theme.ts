@@ -50,6 +50,8 @@ export const EXERCISE = {
 export const TARGETS = {
   go: { color: '#22C55E', symbol: '●', label: 'Go' },
   noGo: { color: '#EF4444', symbol: '✕', label: 'No-go' },
+  /** Cible blanche de préparation (Go / no-go) : la zone est annoncée, la couleur vient ensuite. */
+  cue: { color: '#F2F4F7', symbol: '○', label: 'Préparation' },
   leftHand: { color: '#F97316', symbol: 'G', label: 'Main gauche' },
   rightHand: { color: '#E91EDB', symbol: 'D', label: 'Main droite' },
   /** Le symbole « pied » est une icône (dessinée), pas un caractère. */

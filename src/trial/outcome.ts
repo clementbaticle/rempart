@@ -49,6 +49,8 @@ export interface TrialForStats {
   /** Absent = analysé. Les essais de familiarisation (false) sont exclus du résumé. */
   analyzed?: boolean;
   game?: string;
+  /** Essai précédé d'une cible blanche. */
+  cued?: boolean;
 }
 
 export interface SessionSummary {
@@ -72,6 +74,9 @@ export interface SessionSummary {
   rtMedian: number | null;
   rtIqr: number | null;
   mtMedian: number | null;
+  /** Go / no-go : TR médian des verts directs et des blanc → vert (coût de l'incertitude). */
+  rtMedianDirect: number | null;
+  rtMedianCued: number | null;
   rtIncluded: number;
   /** Essais réussis hors bornes, exclus du calcul. */
   rtExcluded: number;
@@ -108,6 +113,8 @@ export function summarize(all: readonly TrialForStats[], bounds: { minMs: number
     rtMedian: quantile(rts, 0.5),
     rtIqr: q1 === null || q3 === null ? null : q3 - q1,
     mtMedian: quantile(mts, 0.5),
+    rtMedianDirect: quantile(valid.filter((t) => !t.cued).map((t) => t.rtMs!).sort((a, b) => a - b), 0.5),
+    rtMedianCued: quantile(valid.filter((t) => t.cued).map((t) => t.rtMs!).sort((a, b) => a - b), 0.5),
     rtIncluded: rts.length,
     rtExcluded: hits.length - valid.length,
   };
