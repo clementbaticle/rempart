@@ -16,7 +16,8 @@ export interface SessionRecord {
   level: number | null;
   /** Délai pour atteindre la cible appliqué à la série (ms ; plafond de sécurité en Découverte). */
   responseLimitMs: number;
-  game: 'classique';
+  /** Jeu de la série ; 'batterie' = mode Test (familiarisation + Classique + Go / no-go). */
+  game: 'classique' | 'gonogo' | 'batterie';
   status: 'completed' | 'interrupted';
   batteryVersion: string | null;
   seed: number;
@@ -33,7 +34,9 @@ export interface SessionRecord {
   lowQuality: boolean;
   /** Paramètres de mesure utilisés (copie, pour la traçabilité). */
   params: TrialParams & { validRtMinMs: number; validRtMaxMs: number };
+  /** Résumé global (essais analysés) et par jeu. */
   summary: SessionSummary;
+  byGame?: Record<string, SessionSummary>;
   notes: string;
 }
 

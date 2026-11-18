@@ -1,4 +1,5 @@
 /** Modes de temps choisis avant chaque série (section 7). Logique pure. */
+import type { Game } from '../core/sequence';
 
 export type TimeMode = 'decouverte' | 'test' | 'entrainement';
 
@@ -6,7 +7,11 @@ export interface ModeChoice {
   mode: TimeMode;
   /** Niveau d'entraînement (1 = le plus facile), null hors entraînement. */
   level: number | null;
+  /** Jeu (Découverte / Entraînement) ; en Test, la batterie enchaîne Classique puis Go / no-go. */
+  game: Game;
 }
+
+export const GAME_LABELS: Record<Game, string> = { classique: 'Classique', gonogo: 'Go / no-go' };
 
 export interface ModeParams {
   /** Découverte : pas de délai ; plafond de sécurité si la détection perd la joueuse (ms). */
@@ -40,10 +45,10 @@ const seconds = (ms: number): string => `${(ms / 1000).toLocaleString('fr-FR', {
 export function modeLabel(c: ModeChoice, p: ModeParams): string {
   switch (c.mode) {
     case 'decouverte':
-      return 'Découverte (sans limite)';
+      return `${GAME_LABELS[c.game]} · Découverte (sans limite)`;
     case 'test':
-      return `Test (${seconds(p.testResponseMs)})`;
+      return `Batterie Test (${seconds(p.testResponseMs)})`;
     case 'entrainement':
-      return `Entraînement niv. ${c.level ?? 1} (${seconds(responseLimitMs(c, p))})`;
+      return `${GAME_LABELS[c.game]} · Entraînement niv. ${c.level ?? 1} (${seconds(responseLimitMs(c, p))})`;
   }
 }

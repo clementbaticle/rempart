@@ -5,6 +5,7 @@ export interface HomeActions {
   onSelectPlayer: (id: string) => void;
   onNewPlayer: () => void;
   onEditPlayer: (id: string) => void;
+  onHistory: (id: string) => void;
   onDiagnostic: () => void;
 }
 
@@ -14,6 +15,9 @@ export interface PlayerStats {
   rtMedian: number | null;
   hitRate: number | null;
 }
+
+const CHART =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16v2H4zM5 16l4-5 4 3 6-8 1.6 1.2-7.2 9.6-4-3L6.6 17.2z" fill="currentColor"/></svg>';
 
 const PENCIL =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17.5V20h2.5L17.8 8.7l-2.5-2.5L4 17.5Zm15.7-11.2a1 1 0 0 0 0-1.4l-1.6-1.6a1 1 0 0 0-1.4 0l-1.3 1.3 2.5 2.5 1.8-1.8Z" fill="currentColor"/></svg>';
@@ -98,7 +102,13 @@ export function renderHome(
     edit.setAttribute('aria-label', `Modifier le profil ${player.id}`);
     edit.addEventListener('click', () => a.onEditPlayer(player.id));
 
-    card.append(main, edit);
+    const hist = el('button', 'card__edit card__hist');
+    hist.type = 'button';
+    hist.innerHTML = CHART;
+    hist.setAttribute('aria-label', `Historique de ${player.id}`);
+    hist.addEventListener('click', () => a.onHistory(player.id));
+
+    card.append(main, edit, hist);
     grid.append(card);
   }
 

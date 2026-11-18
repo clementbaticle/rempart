@@ -13,6 +13,9 @@ import { renderTrials } from './ui/trialView';
 import { renderModes } from './ui/modeView';
 import type { Player } from './players/player';
 import type { CalibrationRecord } from './storage/calibrationRecord';
+import type { SessionRecord, TrialRow } from './storage/sessionRecord';
+import { referenceRt, renderResults } from './ui/resultsView';
+import { renderHistory } from './ui/historyView';
 import {
   addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, saveSession, updatePlayer, listSessions, type Db,
 } from './storage/db';
@@ -39,8 +42,8 @@ async function showHome(db: Db): Promise<void> {
     const s = (await listSessions(db, p.id)).find((x) => x.summary?.trials > 0);
     stats.set(p.id, {
       lastCalibration: c?.date ?? null,
-      rtMedian: s?.summary.rtMedian ?? null,
-      hitRate: s ? s.summary.hitRate : null,
+      rtMedian: s ? referenceRt(s) : null,
+      hitRate: s ? (s.byGame?.classique ?? s.summary).hitRate : null,
     });
   }
   go(() =>
@@ -72,6 +75,10 @@ async function showHome(db: Db): Promise<void> {
         );
       },
       onDiagnostic: () => go(() => renderLiveView(root, () => void showHome(db))),
+      onHistory: async (id) => {
+        const p = await getPlayer(db, id);
+        if (p) await showHistory(db, p, () => void showHome(db));
+      },
     }),
   );
 }
@@ -97,6 +104,33 @@ async function showCalibration(db: Db, playerId: string): Promise<void> {
 }
 
 /** Choix du mode ; après chaque série, on y revient avec la même calibration. */
+/** Résultats d'une série, comparés à la séance comparable précédente (même mode, même jeu). */
+async function showResults(
+  db: Db,
+  player: Player,
+  record: CalibrationRecord,
+  session: SessionRecord,
+  trials: TrialRow[],
+  saved: boolean,
+): Promise<void> {
+  const previous = (await listSessions(db, player.id)).find(
+    (s) => s.id !== session.id && s.status === 'completed' && s.mode === session.mode && s.game === session.game,
+  );
+  const again = (): void => showModes(db, player, record);
+  go(() =>
+    renderResults(root, player, session, trials, previous, saved, {
+      onAgain: again,
+      onHistory: () => void showHistory(db, player, () => void showResults(db, player, record, session, trials, saved)),
+      onHome: () => void showHome(db),
+    }),
+  );
+}
+
+async function showHistory(db: Db, player: Player, onBack: () => void): Promise<void> {
+  const sessions = await listSessions(db, player.id);
+  go(() => renderHistory(root, player, sessions, onBack));
+}
+
 function showModes(db: Db, player: Player, record: CalibrationRecord): void {
   go(() =>
     renderModes(
@@ -107,7 +141,7 @@ function showModes(db: Db, player: Player, record: CalibrationRecord): void {
           renderTrials(root, player, record, choice, {
             save: (session, trials) => saveSession(db, session, trials),
             onExit: () => void showHome(db),
-            onAgain: () => showModes(db, player, record),
+            onDone: (session, trials, saved) => void showResults(db, player, record, session, trials, saved),
           }),
         ),
       () => void showHome(db),

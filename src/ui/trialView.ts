@@ -5,14 +5,14 @@
 import { CONFIG } from '../config';
 import { toImagePoints, type Points } from '../calibration/geometry';
 import { mulberry32, randomSeed } from '../core/random';
-import { classicBlock } from '../core/sequence';
-import { summarize, type SessionSummary } from '../trial/outcome';
+import { classicBlock, goNoGoBlock, testBattery, type PlannedTrial } from '../core/sequence';
+import { summarize, summarizeByGame } from '../trial/outcome';
 import { TrialMachine, type MachineEvent } from '../trial/trialMachine';
 import type { Player } from '../players/player';
 import type { CalibrationRecord } from '../storage/calibrationRecord';
 import { toTrialRow, type SessionRecord, type TrialRow } from '../storage/sessionRecord';
 import { CameraStage } from './cameraStage';
-import { missIsError, modeLabel, responseLimitMs, type ModeChoice } from '../trial/modes';
+import { GAME_LABELS, missIsError, responseLimitMs, type ModeChoice } from '../trial/modes';
 import { Sounds } from './sound';
 import { drawEffectorMarkers, drawTarget } from './targetDraw';
 import { boundsOf, viewRegion } from './viewRegion';
@@ -37,8 +37,8 @@ function writeSoundPref(on: boolean): void {
 export interface TrialViewActions {
   save: (session: SessionRecord, trials: TrialRow[]) => Promise<void>;
   onExit: () => void;
-  /** Revenir au choix du mode, avec la même calibration (pas besoin de recalibrer). */
-  onAgain: () => void;
+  /** Série terminée ou interrompue, enregistrée (ou non) : afficher les résultats. */
+  onDone: (session: SessionRecord, trials: TrialRow[], saved: boolean) => void;
 }
 
 const EFFECTOR_LANDMARKS = [15, 16, 19, 20, 27, 28, 31, 32];
@@ -49,8 +49,6 @@ function newId(): string {
     : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
-const ms = (v: number | null): string => (v === null ? '—' : `${Math.round(v)} ms`);
-const pct = (v: number): string => `${Math.round(v * 100)} %`;
 
 export function renderTrials(
   root: HTMLElement,
@@ -61,13 +59,18 @@ export function renderTrials(
 ): () => void {
   // Délai pour atteindre la cible selon le mode choisi (plafond de sécurité en Découverte).
   const T = { ...CONFIG.trial, responseMs: responseLimitMs(choice, CONFIG.modes) };
-  const seed = randomSeed();
-  const plan = classicBlock(seed, {
-    repeats: T.classicRepeatsPerZone,
-    maxInARow: T.maxSameZoneInARow,
-    foreperiodMinMs: T.foreperiodMinMs,
-    foreperiodMaxMs: T.foreperiodMaxMs,
-  });
+  // Test : batterie figée (graines fixes) ; sinon le jeu choisi, tiré au hasard.
+  const isBattery = choice.mode === 'test';
+  const seed = isBattery ? CONFIG.battery.seeds.classique : randomSeed();
+  const fp = { foreperiodMinMs: T.foreperiodMinMs, foreperiodMaxMs: T.foreperiodMaxMs };
+  const plan: PlannedTrial[] = isBattery
+    ? testBattery({ ...CONFIG.battery, ...fp, classicRepeatsPerZone: T.classicRepeatsPerZone, noGoZones: T.noGoZones,
+        maxSameZoneInARow: T.maxSameZoneInARow, maxNoGoInARow: T.maxNoGoInARow })
+    : choice.game === 'gonogo'
+      ? goNoGoBlock(seed, { ...fp, noGoZones: T.noGoZones, maxInARow: T.maxSameZoneInARow, maxNoGoInARow: T.maxNoGoInARow })
+      : classicBlock(seed, { ...fp, repeats: T.classicRepeatsPerZone, maxInARow: T.maxSameZoneInARow });
+  const blockSizes = new Map<number, number>();
+  plan.forEach((t) => blockSizes.set(t.block, (blockSizes.get(t.block) ?? 0) + 1));
   const startDate = new Date();
   const video = calibration.video;
   let lastPoints: Points = [];
@@ -85,7 +88,6 @@ export function renderTrials(
     <div class="trial__countdown" hidden></div>
     <div class="trial__counter"></div>
     <div class="trial__message"></div>
-    <div class="trial__summary" hidden></div>
     <div class="trial__buttons">
       <button class="trial__sound" type="button"></button>
       <button class="trial__stop" type="button">Arrêter</button>
@@ -97,9 +99,12 @@ export function renderTrials(
       $('.trial__message').textContent = 'Faux départ';
       messageUntil = performance.now() + 900;
     } else if (e.type === 'outcome') {
+      // Changement de bloc (batterie Test) : pause après cet essai.
+      const next = plan[e.record.index];
+      if (next && next.block !== e.record.block) blockPause(next);
       // Retour APRÈS la réponse : flash plein écran bref + son.
       // En Découverte, un délai dépassé (plafond de sécurité) n'est pas présenté comme une erreur.
-      const ok = e.record.outcome === 'hit';
+      const ok = e.record.outcome === 'hit' || e.record.outcome === 'correct_rejection';
       if (!ok && e.record.outcome === 'miss' && !missIsError(choice)) return;
       const flash = $('.trial__flash');
       flash.className = `trial__flash ${ok ? 'is-ok' : 'is-error'}`;
@@ -161,7 +166,7 @@ export function renderTrials(
     if (phase === 'stimulus' && !targetDrawn) {
       const zone = calibration.grid.zones.find((z) => z.id === machine.currentZone)!;
       layer.clear();
-      drawTarget(layer.ctx, zone.center, calibration.grid.targetRadiusPx, 'go', video, layer.rect);
+      drawTarget(layer.ctx, zone.center, calibration.grid.targetRadiusPx, machine.isGo ? 'go' : 'noGo', video, layer.rect);
       targetDrawn = true;
       machine.stimulusShown(performance.now(), rafTs);
     } else if (targetDrawn && phase !== 'stimulus' && phase !== 'response') {
@@ -169,7 +174,7 @@ export function renderTrials(
       targetDrawn = false;
     }
 
-    $('.trial__counter').textContent = `Essai ${Math.min(machine.index + 1, plan.length)} / ${plan.length}`;
+    $('.trial__counter').textContent = counterLabel();
     waitSince = phase === 'waitGuard' ? (waitSince ?? now) : null;
     const msg = $('.trial__message');
     if (now > messageUntil) {
@@ -229,7 +234,7 @@ export function renderTrials(
   };
 
   $('.trial__stop').addEventListener('click', () => {
-    if (finished) return a.onExit();
+    if (finished) return;
     if (window.confirm('Arrêter la série ? Les essais déjà faits seront enregistrés.')) void finish('interrupted');
   });
 
@@ -239,7 +244,9 @@ export function renderTrials(
     cancelAnimationFrame(raf);
     layer.clear();
     const st = stage.stats();
-    const summary = summarize(machine.records, { minMs: T.validRtMinMs, maxMs: T.validRtMaxMs });
+    const bounds = { minMs: T.validRtMinMs, maxMs: T.validRtMaxMs };
+    const summary = summarize(machine.records, bounds);
+    const byGame = summarizeByGame(machine.records, bounds);
     const session: SessionRecord = {
       id: newId(),
       playerId: player.id,
@@ -248,9 +255,9 @@ export function renderTrials(
       mode: choice.mode,
       level: choice.level,
       responseLimitMs: T.responseMs,
-      game: 'classique',
+      game: isBattery ? 'batterie' : choice.game,
       status,
-      batteryVersion: null,
+      batteryVersion: isBattery ? CONFIG.battery.version : null,
       seed,
       calibrationId: calibration.id,
       device: { userAgent: navigator.userAgent, videoWidth: st.videoWidth, videoHeight: st.videoHeight },
@@ -264,6 +271,7 @@ export function renderTrials(
       lowQuality: st.meanDetectionFps !== null && st.meanDetectionFps < CONFIG.quality.minFps,
       params: { ...T },
       summary,
+      byGame,
       notes: '',
     };
     const rows = machine.records.map((r) => toTrialRow(session.id, player.id, r));
@@ -275,38 +283,56 @@ export function renderTrials(
       console.error(err);
     }
     stage.setViewRegion(null);
-    showSummary(summary, session, saved);
+    a.onDone(session, rows, saved);
   }
 
-  function showSummary(s: SessionSummary, session: SessionRecord, saved: boolean): void {
-    $('.trial__message').textContent = '';
-    $('.trial__counter').textContent = '';
-    const box = $('.trial__summary');
-    box.innerHTML = `
-      <h2>${session.status === 'completed' ? 'Série terminée' : 'Série interrompue'} — ${player.id}</h2>
-      <p class="trial__mode">${modeLabel(choice, CONFIG.modes)}</p>
-      <dl>
-        <dt>Essais</dt><dd>${s.trials}</dd>
-        <dt>Réussites</dt><dd>${s.hits} (${pct(s.hitRate)})</dd>
-        <dt>TR médian</dt><dd>${ms(s.rtMedian)}</dd>
-        <dt>Écart interquartile</dt><dd>${ms(s.rtIqr)}</dd>
-        <dt>Temps de mouvement médian</dt><dd>${ms(s.mtMedian)}</dd>
-        <dt>Anticipations</dt><dd>${s.anticipations} (${pct(s.anticipationRate)})</dd>
-        <dt>Cible non atteinte à temps</dt><dd>${s.misses}</dd>
-        <dt>Faux départs</dt><dd>${s.falseStarts}</dd>
-        <dt>TR exclus (hors ${T.validRtMinMs}-${T.validRtMaxMs} ms)</dt><dd>${s.rtExcluded}</dd>
-        <dt>Détection</dt><dd>${session.meanDetectionFps === null ? '—' : `${session.meanDetectionFps.toFixed(1)} i/s`}</dd>
-      </dl>
-      <p class="trial__warn" ${session.lowQuality ? '' : 'hidden'}>Qualité insuffisante (moins de ${CONFIG.quality.minFps} i/s) : résultats peu fiables.</p>
-      <p class="trial__warn" ${saved ? 'hidden' : ''}>Échec de l’enregistrement.</p>
-      <div class="calib__actions">
-        <button class="btn btn--ghost" type="button" data-action="home">Accueil</button>
-        <button class="btn btn--light" type="button" data-action="again">Autre exercice ›</button>
-      </div>`;
-    box.querySelector('[data-action="home"]')!.addEventListener('click', a.onExit);
-    box.querySelector('[data-action="again"]')!.addEventListener('click', a.onAgain);
-    box.hidden = false;
-    $('.trial__buttons').hidden = true;
+  /** Libellé du compteur : bloc et essai (batterie), sinon essai. */
+  function counterLabel(): string {
+    const cur = machine.currentTrial ?? plan[plan.length - 1]!;
+    const inBlock = plan.slice(0, machine.index + 1).filter((t) => t.block === cur.block).length;
+    const size = blockSizes.get(cur.block) ?? plan.length;
+    if (!isBattery) return `Essai ${Math.min(inBlock, size)} / ${size}`;
+    if (cur.block === 0) return `Familiarisation ${inBlock} / ${size}`;
+    return `Bloc ${cur.block} · ${GAME_LABELS[cur.game]} ${inBlock} / ${size}`;
+  }
+
+  /** Pause entre deux blocs : la série est suspendue, compte à rebours, puis reprise. */
+  function blockPause(next: PlannedTrial): void {
+    started = false;
+    const el = $('.trial__countdown');
+    const end = performance.now() + CONFIG.battery.pauseMs;
+    const title = `Pause — bloc ${next.block} : ${GAME_LABELS[next.game]}`;
+    const hint = next.game === 'gonogo' ? 'Vert ● : touche · Rouge ✕ : ne bouge pas' : '';
+    el.hidden = false;
+    el.classList.add('is-pause');
+    let lastBeep = -1;
+    const step = (): void => {
+      if (finished) return;
+      const left = Math.ceil((end - performance.now()) / 1000);
+      if (left <= 0) {
+        el.hidden = true;
+        el.classList.remove('is-pause');
+        sounds.go();
+        started = true;
+        return;
+      }
+      el.innerHTML = '';
+      const t = document.createElement('div');
+      t.className = 'trial__pause-title';
+      t.textContent = title;
+      const n = document.createElement('div');
+      n.textContent = String(left);
+      const h = document.createElement('div');
+      h.className = 'trial__pause-hint';
+      h.textContent = hint;
+      el.append(t, n, h);
+      if (left <= 3 && left !== lastBeep) {
+        sounds.tick();
+        lastBeep = left;
+      }
+      window.setTimeout(step, 200);
+    };
+    window.setTimeout(step, CONFIG.feedback.flashMs);
   }
 
   void stage.start().then((ok) => {

@@ -6,7 +6,7 @@ import { measureGuard } from '../calibration/measures';
 import { makePose } from '../calibration/testPose';
 import { mulberry32 } from '../core/random';
 import { bodySample, features, meanFeatures, movementCause, swayRatio } from './body';
-import { classicOutcome, quantile, summarize, summarizeByGame } from './outcome';
+import { classicOutcome, quantile, summarize, summarizeByGame, zoneStats } from './outcome';
 import { TrialMachine, type MachineEvent } from './trialMachine';
 import { guardOverlaps, handsInGuard, targetTouch, touches } from './zones';
 
@@ -371,5 +371,21 @@ describe('automate d’essai', () => {
     d.untilStimulus();
     for (let i = 0; i < 45; i++) d.frame(shift(makePose(), 0, 12 * Math.sin(i / 2)));
     expect(d.m.records[0]!.outcome).toBe('correct_rejection');
+  });
+
+  it('statistiques par zone', () => {
+    const z = zoneStats(
+      [
+        { zone: 1, outcome: 'hit', rtMs: 300, mtMs: 100, falseStarts: 0 },
+        { zone: 1, outcome: 'hit', rtMs: 500, mtMs: 100, falseStarts: 0 },
+        { zone: 2, outcome: 'miss', rtMs: null, mtMs: null, falseStarts: 0 },
+        { zone: 3, outcome: 'correct_rejection', rtMs: null, mtMs: null, falseStarts: 0, isGo: false },
+      ],
+      4,
+      { minMs: 150, maxMs: 1500 },
+    );
+    expect(z.map((s) => [s.zone, s.rtMedian, s.hits, s.goTrials])).toEqual([
+      [1, 400, 2, 2], [2, null, 0, 1], [3, null, 0, 0], [4, null, 0, 0],
+    ]);
   });
 });

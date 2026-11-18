@@ -509,3 +509,20 @@ body {
   margin: -0.4rem 0 0.8rem;
   color: var(--ex-text-muted);
 }
+
+.trial__countdown.is-pause {
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--ex-panel);
+}
+
+.trial__pause-title {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+}
+
+.trial__pause-hint {
+  font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+  font-weight: 600;
+  color: var(--ex-text-muted);
+}

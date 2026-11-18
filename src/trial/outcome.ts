@@ -123,3 +123,29 @@ export function summarizeByGame(
   for (const g of games) out[g] = summarize(all.filter((t) => (t.game ?? 'classique') === g), bounds);
   return out;
 }
+
+export interface ZoneStat {
+  zone: number;
+  /** TR médian des essais go réussis sur cette zone (dans les bornes), null sans réussite. */
+  rtMedian: number | null;
+  hits: number;
+  goTrials: number;
+}
+
+/** TR médian et réussites par zone (essais go analysés). */
+export function zoneStats(
+  all: readonly (TrialForStats & { zone: number })[],
+  zoneCount: number,
+  bounds: { minMs: number; maxMs: number },
+): ZoneStat[] {
+  const go = all.filter((t) => t.analyzed !== false && t.isGo !== false);
+  return Array.from({ length: zoneCount }, (_, i) => {
+    const zone = i + 1;
+    const z = go.filter((t) => t.zone === zone);
+    const rts = z
+      .filter((t) => t.outcome === 'hit' && t.rtMs !== null && t.rtMs >= bounds.minMs && t.rtMs <= bounds.maxMs)
+      .map((t) => t.rtMs!)
+      .sort((a, b) => a - b);
+    return { zone, rtMedian: quantile(rts, 0.5), hits: z.filter((t) => t.outcome === 'hit').length, goTrials: z.length };
+  });
+}
