@@ -75,7 +75,10 @@ La garde d'une gardienne n'est pas statique (petits rebonds, mains qui bougent) 
    - **Touche** : première image où un effecteur **autorisé** (poignet ou index ; cheville ou pointe de pied) **entre** dans le cercle de la **cible** : un effecteur déjà dans ce cercle au moment de l'apparition ne compte qu'après en être sorti puis y être revenu → *temps total* ; *temps de mouvement* = total − TR. Une touche sans initiation détectée auparavant fixe l'initiation à la même image.
    - **Zones traversées** : passer par d'autres zones pour atteindre la cible (ex. la jambe traverse la zone voisine pour aller en bas à droite) **n'est pas une erreur** ; ces zones sont seulement enregistrées, dans l'ordre, pour l'analyse des trajectoires.
    - **Trajectoires** : positions des mains, pieds, épaules et bassin enregistrées image par image (coordonnées seulement, aucune image), de l'avant-période à la fin de la réponse, pour pouvoir recalculer les TR avec un autre seuil. **Indice de balancement** par essai : amplitude moyenne des mouvements des mains (par rapport aux épaules) pendant l'avant-période, en proportion de la taille apparente.
-5. **Issue** de l'essai : `hit` (cible atteinte par un effecteur autorisé), `miss` (délai dépassé), `anticipation` (initiation < 150 ms après le stimulus) ; pour les modes de l'étape 4 : `commission` (mouvement sur un no-go), `correct_rejection` (no-go respecté), `wrong_effector` (Bon segment). Il n'y a plus d'issue « mauvaise zone ».
+5. **Issue** de l'essai :
+   - essai **go** : `hit` (cible atteinte), `miss` (délai dépassé), `anticipation` (initiation < 150 ms après le stimulus) ;
+   - essai **no-go** : `commission` = **vrai départ** détecté (même critère et même seuil que l'initiation d'un go, 5 % de la taille apparente) pendant la fenêtre de 1 500 ms, l'essai s'arrête alors ; `correct_rejection` = aucun départ pendant la fenêtre. L'**amplitude maximale du mouvement** pendant la fenêtre est enregistrée (pour pouvoir changer de critère après coup).
+   - Il n'y a pas d'issue « mauvaise zone ».
 6. **Retour** à la joueuse, **après** la réponse uniquement : **flash plein écran** vert (réussite) ou rouge (erreur) de 100 ms, et **son** (deux notes montantes / note grave), désactivable. La série commence par un **compte à rebours 3, 2, 1, GO** (bips) ; aucune mesure pendant celui-ci.
 7. Intervalle avant l'essai suivant : 300 ms (le retour visuel de 300 ms s'y déroule) + retour en position de garde. Environ 2 s entre deux cibles. **Ces délais doivent être figés avant la collecte des données du mémoire.**
 
@@ -86,8 +89,9 @@ Délai de réponse selon le **mode de temps** choisi avant la série (section 7)
 | Mode | Règle | Processus visé |
 | --- | --- | --- |
 | **Classique** | Une cible verte dans une des 12 zones ; l'atteindre avec **n'importe quel effecteur**, main ou pied, à toutes les hauteurs (des arrêts réels associent souvent pied et main en hauteur) | Temps de réaction de choix |
-| **Go / no-go** | Vert = toucher ; rouge = ne pas bouger. Proportion 70 % go / 30 % no-go | Inhibition (anti-feinte) |
-| **Bon segment** | Couleur + symbole de la cible = effecteur imposé : orange « G » = main gauche, magenta « D » = main droite, blanc + icône de pied = pied (côté de la cible) — voir section 10 | Choix de réponse, coordination |
+| **Go / no-go** | Vert ● = toucher ; rouge ✕ = ne pas bouger. Bloc de 18 essais : 12 go (chaque zone une fois) + 6 no-go (2 par rangée, 3 par côté), soit 67 % / 33 % ; au plus 2 no-go de suite | Inhibition (anti-feinte) |
+
+**Bon segment retiré** : imposer une main par couleur (y compris croisée, main gauche pour un ballon à droite) ne correspond pas à la technique des gardiennes, qui parent avec le bras et / ou la jambe du côté du ballon ; restreint au côté du ballon, il ferait doublon avec le Classique. Piste v2 (entraînement, hors mesure) : choix du geste « main » / « pied », toujours du côté du ballon.
 
 Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), double cible, plots couleur, lecture de tir vidéo, scan périphérique.
 
@@ -100,17 +104,17 @@ Prévu en v2 : leurre (cible qui glisse vers une autre zone en 100-200 ms), doub
 
 ### Mode Test — séquence figée
 - Générateur pseudo-aléatoire à graine (ex. mulberry32) ; **graine et version de la batterie enregistrées** ; même séquence à chaque passage.
-- Batterie v1 (≈ 7-8 min) :
-  - Familiarisation : 6 essais classiques (non analysés).
-  - Bloc 1 Classique : 36 essais (12 zones × 3, ordre contrebalancé, pas plus de 2 fois la même zone de suite).
-  - Bloc 2 Go / no-go : 40 essais (28 go, 12 no-go).
-  - Bloc 3 Bon segment : 36 essais (12 zones × 3).
-  - Pause de 30 s entre les blocs.
+- Batterie v1 (48 essais, ≈ 3 min) — graines fixes, avant-périodes comprises :
+  - Familiarisation : 6 essais classiques (6 zones différentes, non analysés).
+  - Bloc 1 Classique : 24 essais (12 zones × 2, pas plus de 2 fois la même zone de suite).
+  - Bloc 2 Go / no-go : 18 essais (12 go + 6 no-go, au plus 2 no-go de suite).
+  - Pause de 10 s entre les blocs (compte à rebours à l'écran).
+- En Découverte et en Entraînement, on choisit le jeu (Classique ou Go / no-go) ; mêmes tailles de bloc, séquence tirée au hasard.
 - Aucun ajustement de difficulté ; pas de classement affiché pendant le test.
 
 ### Mode Entraînement — progression
 - Mêmes jeux, séances de ~15 min, choix de l'entraîneur ou programme préréglé.
-- Difficulté adaptative par escalier (2 réussites → plus dur, 1 échec → plus facile) sur : durée d'affichage de la cible, délai de réponse, proportion de no-go.
+- Difficulté adaptative par escalier (2 réussites → plus dur, 1 échec → plus facile) sur le délai de réponse (niveaux), éventuellement la proportion de no-go.
 - Score, record personnel, série de séances, classement du groupe (désactivable).
 
 ## 8. Modèle de données
@@ -144,11 +148,8 @@ Export CSV : un fichier `trials` en format long avec les colonnes de session ré
     | --- | --- | --- |
     | Go | vert | ● |
     | No-go | rouge | ✕ |
-    | Main gauche | orange | lettre G |
-    | Main droite | magenta | lettre D |
-    | Pied | blanc | icône de pied |
 
-  - Ces couleurs remplacent le bleu, le jaune et le violet prévus au départ pour le mode Bon segment (section 6).
+  - Couleurs réservées pour une éventuelle v2 (ancien Bon segment, retiré) : orange « G », magenta « D », blanc + icône de pied.
 - Écrans : Accueil (choix joueuse) → Calibration → Choix du mode → Jeu / Test → Résultats de la séance → Historique joueuse → Réglages / Export (protégé par un code staff).
 - Entièrement en français.
 
@@ -163,5 +164,5 @@ Export CSV : un fichier `trials` en format long avec les colonnes de session ré
 1. **Socle** : projet Vite + TS + PWA, caméra en miroir, squelette MediaPipe dessiné par-dessus, compteur d'i/s. Déploiement GitHub Pages. → *Test sur l'iPad.*
 2. **Profils, calibration et grille** : profils joueuses (pseudonyme + taille), coins de la cage, cadrage, garde, grille de 12 zones calée sur la cage ; tables IndexedDB `players` et `calibrations`.
 3. **Mode Classique** : boucle d'essai complète (position de départ, avant-période, horodatages, issues), tables IndexedDB `sessions` et `trials`.
-4. **Go / no-go et Bon segment**, mode Test à graine, écran de résultats, export CSV / JSON.
+4. **Go / no-go**, batterie Test figée (Classique + Go / no-go), écran de résultats et historique, réglages staff, export CSV / JSON.
 5. **Habillage** (couleurs TMVH, sons, profils), mode Entraînement adaptatif. → *Test au gymnase et étude de fiabilité.*
