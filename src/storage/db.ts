@@ -132,3 +132,53 @@ export async function listTrials(db: Db, sessionId: string): Promise<TrialRow[]>
   const all = await db.getAllFromIndex('trials', 'by_session', sessionId);
   return all.sort((a, b) => a.index - b.index);
 }
+
+/** Toutes les données (export). */
+export async function exportAll(db: Db): Promise<{
+  players: Player[];
+  calibrations: CalibrationRecord[];
+  sessions: SessionRecord[];
+  trials: TrialRow[];
+}> {
+  const [players, calibrations, sessions, trials] = await Promise.all([
+    db.getAll('players'),
+    db.getAll('calibrations'),
+    db.getAll('sessions'),
+    db.getAll('trials'),
+  ]);
+  return { players, calibrations, sessions, trials };
+}
+
+export interface ImportCounts {
+  players: number;
+  calibrations: number;
+  sessions: number;
+  trials: number;
+  skipped: number;
+}
+
+/** Importe une sauvegarde SANS écraser : les éléments déjà présents (même identifiant) sont ignorés. */
+export async function importAll(
+  db: Db,
+  data: {
+    players: readonly Player[];
+    calibrations: readonly CalibrationRecord[];
+    sessions: readonly SessionRecord[];
+    trials: readonly TrialRow[];
+  },
+): Promise<ImportCounts> {
+  const counts: ImportCounts = { players: 0, calibrations: 0, sessions: 0, trials: 0, skipped: 0 };
+  const tx = db.transaction(['players', 'calibrations', 'sessions', 'trials'], 'readwrite');
+  for (const store of ['players', 'calibrations', 'sessions', 'trials'] as const) {
+    const os = tx.objectStore(store);
+    for (const item of data[store] as readonly { id: string }[]) {
+      if (await os.getKey(item.id)) counts.skipped += 1;
+      else {
+        await (os as unknown as { add: (v: unknown) => Promise<unknown> }).add(item);
+        counts[store] += 1;
+      }
+    }
+  }
+  await tx.done;
+  return counts;
+}

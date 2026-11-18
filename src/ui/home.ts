@@ -7,6 +7,7 @@ export interface HomeActions {
   onEditPlayer: (id: string) => void;
   onHistory: (id: string) => void;
   onDiagnostic: () => void;
+  onSettings: () => void;
 }
 
 /** Chiffres clés affichés sur la carte d'une gardienne (dernière série enregistrée). */
@@ -65,7 +66,10 @@ export function renderHome(
         <section class="club__grid"></section>
 
         <footer class="club__footer">
-          <button class="club__ghost" type="button" data-action="diag">Diagnostic caméra</button>
+          <div class="club__footer-left">
+            <button class="club__ghost" type="button" data-action="diag">Diagnostic caméra</button>
+            <button class="club__ghost" type="button" data-action="settings">Réglages</button>
+          </div>
           <span class="club__version">v${__APP_VERSION__}</span>
         </footer>
       </div>
@@ -123,4 +127,5 @@ export function renderHome(
   root.querySelector('[data-action="new"]')!.addEventListener('click', a.onNewPlayer);
 
   root.querySelector('[data-action="diag"]')!.addEventListener('click', a.onDiagnostic);
+  root.querySelector('[data-action="settings"]')!.addEventListener('click', a.onSettings);
 }

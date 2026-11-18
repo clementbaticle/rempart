@@ -16,6 +16,7 @@ import type { CalibrationRecord } from './storage/calibrationRecord';
 import type { SessionRecord, TrialRow } from './storage/sessionRecord';
 import { referenceRt, renderResults } from './ui/resultsView';
 import { renderHistory } from './ui/historyView';
+import { renderSettings } from './ui/settingsView';
 import {
   addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, saveSession, updatePlayer, listSessions, type Db,
 } from './storage/db';
@@ -75,6 +76,7 @@ async function showHome(db: Db): Promise<void> {
         );
       },
       onDiagnostic: () => go(() => renderLiveView(root, () => void showHome(db))),
+      onSettings: () => go(() => renderSettings(root, db, () => void showHome(db))),
       onHistory: async (id) => {
         const p = await getPlayer(db, id);
         if (p) await showHistory(db, p, () => void showHome(db));

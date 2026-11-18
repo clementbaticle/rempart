@@ -213,6 +213,7 @@ export const CONFIG = {
     cameraPosition: 'rempart.cameraPosition',
     goalCorners: 'rempart.goalCorners',
     sound: 'rempart.sound',
+    staffCode: 'rempart.staffCode',
   },
 } as const;
 

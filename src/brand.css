@@ -897,3 +897,89 @@ button.mode:active {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Réglages staff ---------- */
+.club__footer-left {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.settings {
+  margin-top: clamp(1rem, 3vh, 2rem);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.settings__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 1.2rem 1.3rem;
+  border-radius: 20px;
+  border: 1px solid var(--brand-glass-line);
+  background: linear-gradient(170deg, var(--brand-glass-top), var(--brand-glass-bottom));
+}
+
+.settings__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.settings__text,
+.settings__msg {
+  margin: 0;
+  color: var(--brand-text-soft);
+  font-size: 0.92rem;
+}
+
+.settings__msg:empty {
+  display: none;
+}
+
+.settings__msg {
+  color: var(--brand-yellow);
+}
+
+.settings__code,
+.settings__file {
+  font: inherit;
+  font-size: 1.3rem;
+  letter-spacing: 0.4em;
+  width: 10rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--brand-glass-line);
+  background: var(--brand-field);
+  color: var(--brand-text);
+}
+
+.settings__file {
+  width: 100%;
+  font-size: 0.95rem;
+  letter-spacing: normal;
+}
+
+.settings__players {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.settings__player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--brand-glass-line);
+}
+
+.settings__pid {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
