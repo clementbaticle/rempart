@@ -11,6 +11,8 @@ import { renderPlayerForm } from './ui/playerForm';
 import { renderCalibration } from './ui/calibrationView';
 import { renderTrials } from './ui/trialView';
 import { renderModes } from './ui/modeView';
+import type { Player } from './players/player';
+import type { CalibrationRecord } from './storage/calibrationRecord';
 import {
   addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, saveSession, updatePlayer, listSessions, type Db,
 } from './storage/db';
@@ -89,22 +91,27 @@ async function showCalibration(db: Db, playerId: string): Promise<void> {
         return updated;
       },
       onExit: () => void showHome(db),
-      onStart: (record) =>
-        go(() =>
-          renderModes(
-            root,
-            player,
-            (choice) =>
-              go(() =>
-                renderTrials(root, player, record, choice, {
-                  save: (session, trials) => saveSession(db, session, trials),
-                  onExit: () => void showHome(db),
-                }),
-              ),
-            () => void showHome(db),
-          ),
-        ),
+      onStart: (record) => showModes(db, player, record),
     }),
+  );
+}
+
+/** Choix du mode ; après chaque série, on y revient avec la même calibration. */
+function showModes(db: Db, player: Player, record: CalibrationRecord): void {
+  go(() =>
+    renderModes(
+      root,
+      player,
+      (choice) =>
+        go(() =>
+          renderTrials(root, player, record, choice, {
+            save: (session, trials) => saveSession(db, session, trials),
+            onExit: () => void showHome(db),
+            onAgain: () => showModes(db, player, record),
+          }),
+        ),
+      () => void showHome(db),
+    ),
   );
 }
 

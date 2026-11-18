@@ -37,6 +37,8 @@ function writeSoundPref(on: boolean): void {
 export interface TrialViewActions {
   save: (session: SessionRecord, trials: TrialRow[]) => Promise<void>;
   onExit: () => void;
+  /** Revenir au choix du mode, avec la même calibration (pas besoin de recalibrer). */
+  onAgain: () => void;
 }
 
 const EFFECTOR_LANDMARKS = [15, 16, 19, 20, 27, 28, 31, 32];
@@ -297,8 +299,12 @@ export function renderTrials(
       </dl>
       <p class="trial__warn" ${session.lowQuality ? '' : 'hidden'}>Qualité insuffisante (moins de ${CONFIG.quality.minFps} i/s) : résultats peu fiables.</p>
       <p class="trial__warn" ${saved ? 'hidden' : ''}>Échec de l’enregistrement.</p>
-      <div class="calib__actions"><button class="btn btn--light" type="button">Accueil</button></div>`;
-    box.querySelector('button')!.addEventListener('click', a.onExit);
+      <div class="calib__actions">
+        <button class="btn btn--ghost" type="button" data-action="home">Accueil</button>
+        <button class="btn btn--light" type="button" data-action="again">Autre exercice ›</button>
+      </div>`;
+    box.querySelector('[data-action="home"]')!.addEventListener('click', a.onExit);
+    box.querySelector('[data-action="again"]')!.addEventListener('click', a.onAgain);
     box.hidden = false;
     $('.trial__buttons').hidden = true;
   }

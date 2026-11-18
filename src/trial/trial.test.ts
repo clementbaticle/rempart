@@ -67,11 +67,15 @@ describe('zones', () => {
     expect(handsInGuard(bodySample(makePose({ arms: 'spread' })), guard, 48)).toBe(false);
   });
 
-  it('touche : seule la cible compte, pied seulement sur la rangée du bas', () => {
+  it('touche : seule la cible compte, main ou pied à toutes les hauteurs', () => {
     const at4 = touches(leftHandAt(makePose(), center(4)), grid, 1);
     expect(targetTouch(at4, 4)).toEqual({ zone: 4, effector: 'main-gauche' });
     expect(targetTouch(at4, 1)).toBeNull(); // une autre zone touchée n'est pas la cible
-    expect(targetTouch([{ zone: 1, effector: 'pied-gauche' }], 1)).toBeNull(); // pied sur la rangée du haut
+    expect(targetTouch([{ zone: 1, effector: 'pied-gauche' }], 1)).toEqual({ zone: 1, effector: 'pied-gauche' });
+    // Main et pied ensemble sur la cible : la main est retenue comme effecteur.
+    expect(targetTouch([{ zone: 1, effector: 'pied-gauche' }, { zone: 1, effector: 'main-droite' }], 1)).toEqual({
+      zone: 1, effector: 'main-droite',
+    });
     expect(targetTouch([{ zone: 9, effector: 'pied-gauche' }], 9)).toEqual({ zone: 9, effector: 'pied-gauche' });
   });
 
@@ -229,13 +233,14 @@ describe('automate d’essai', () => {
     expect(r.responseLimitMs).toBe(P.responseMs);
   });
 
-  it('pied sur une cible haute : ignoré, puis délai dépassé', () => {
+  it('pied sur une cible haute : réussite', () => {
     const d = new Driver([1]);
     d.untilStimulus();
     const footAt1 = makePose().map((q, i) => (i === 27 || i === 31 ? { ...center(1) } : q));
     for (let i = 0; i < 5; i++) d.frame(makePose());
-    for (let i = 0; i < 60; i++) d.frame(footAt1);
-    expect(d.m.records[0]!.outcome).toBe('miss');
+    d.frame(footAt1);
+    expect(d.m.records[0]!.outcome).toBe('hit');
+    expect(d.m.records[0]!.usedEffector).toBe('pied-gauche');
   });
 
   it('retour, intervalle puis essai suivant, puis fin', () => {

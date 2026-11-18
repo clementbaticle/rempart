@@ -85,7 +85,7 @@ Délai de réponse selon le **mode de temps** choisi avant la série (section 7)
 
 | Mode | Règle | Processus visé |
 | --- | --- | --- |
-| **Classique** | Une cible verte dans une des 12 zones ; l'atteindre avec une main (rangées haute et du milieu) ou une main / un pied (rangée basse) | Temps de réaction de choix |
+| **Classique** | Une cible verte dans une des 12 zones ; l'atteindre avec **n'importe quel effecteur**, main ou pied, à toutes les hauteurs (des arrêts réels associent souvent pied et main en hauteur) | Temps de réaction de choix |
 | **Go / no-go** | Vert = toucher ; rouge = ne pas bouger. Proportion 70 % go / 30 % no-go | Inhibition (anti-feinte) |
 | **Bon segment** | Couleur + symbole de la cible = effecteur imposé : orange « G » = main gauche, magenta « D » = main droite, blanc + icône de pied = pied (côté de la cible) — voir section 10 | Choix de réponse, coordination |
 

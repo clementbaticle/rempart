@@ -1,6 +1,6 @@
 /** Zones de garde et détection de touche (section 5). Coordonnées : pixels image, miroir. */
 import { LEFT_HAND, L_ANKLE, L_FOOT, RIGHT_HAND, R_ANKLE, R_FOOT, present, type Point, type Points } from '../calibration/geometry';
-import { rowOf, type Grid } from '../calibration/grid';
+import type { Grid } from '../calibration/grid';
 import type { GuardMeasures } from '../calibration/measures';
 import type { BodySample } from './body';
 
@@ -53,8 +53,11 @@ export function touches(p: Points, grid: Grid, hitFactor: number): Touch[] {
 
 export const touchKey = (t: Touch): string => `${t.zone}:${t.effector}`;
 
-/** Mode Classique : main partout ; pied seulement sur la rangée du bas. */
-export const allowedClassic = (zone: number, effector: Effector): boolean => !isFoot(effector) || rowOf(zone) === 2;
+/**
+ * Mode Classique : n'importe quel effecteur (main ou pied) sur n'importe quelle cible —
+ * des arrêts réels associent souvent pied et main en hauteur.
+ */
+export const allowedClassic = (_zone: number, _effector: Effector): boolean => true;
 
 /**
  * Touche de la CIBLE par un effecteur autorisé (main de préférence), ou null.
