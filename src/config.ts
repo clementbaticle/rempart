@@ -158,6 +158,16 @@ export const CONFIG = {
     maxSameZoneInARow: 2,
   },
 
+  /** Modes de temps (section 7) : délai pour atteindre la cible. PARAMÈTRES DE MESURE pour le mode Test. */
+  modes: {
+    /** Découverte : pas de délai ; plafond de sécurité si la détection perd la joueuse (ms). */
+    discoverySafetyMs: 10000,
+    /** Test : délai fixe, identique pour toutes (ms). Doit rester égal à trial.responseMs. */
+    testResponseMs: 2000,
+    /** Entraînement : délai par niveau, du niveau 1 (facile) au niveau 5 (ms). */
+    trainingLevelsMs: [2000, 1600, 1300, 1100, 900],
+  },
+
   player: {
     minHeightCm: 120,
     maxHeightCm: 220,

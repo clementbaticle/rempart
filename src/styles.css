@@ -504,3 +504,8 @@ body {
 .calib__loupe[hidden] {
   display: none;
 }
+
+.trial__mode {
+  margin: -0.4rem 0 0.8rem;
+  color: var(--ex-text-muted);
+}

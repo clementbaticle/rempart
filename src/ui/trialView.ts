@@ -12,6 +12,7 @@ import type { Player } from '../players/player';
 import type { CalibrationRecord } from '../storage/calibrationRecord';
 import { toTrialRow, type SessionRecord, type TrialRow } from '../storage/sessionRecord';
 import { CameraStage } from './cameraStage';
+import { missIsError, modeLabel, responseLimitMs, type ModeChoice } from '../trial/modes';
 import { Sounds } from './sound';
 import { drawEffectorMarkers, drawTarget } from './targetDraw';
 import { boundsOf, viewRegion } from './viewRegion';
@@ -53,9 +54,11 @@ export function renderTrials(
   root: HTMLElement,
   player: Player,
   calibration: CalibrationRecord,
+  choice: ModeChoice,
   a: TrialViewActions,
 ): () => void {
-  const T = CONFIG.trial;
+  // Délai pour atteindre la cible selon le mode choisi (plafond de sécurité en Découverte).
+  const T = { ...CONFIG.trial, responseMs: responseLimitMs(choice, CONFIG.modes) };
   const seed = randomSeed();
   const plan = classicBlock(seed, {
     repeats: T.classicRepeatsPerZone,
@@ -93,7 +96,9 @@ export function renderTrials(
       messageUntil = performance.now() + 900;
     } else if (e.type === 'outcome') {
       // Retour APRÈS la réponse : flash plein écran bref + son.
+      // En Découverte, un délai dépassé (plafond de sécurité) n'est pas présenté comme une erreur.
       const ok = e.record.outcome === 'hit';
+      if (!ok && e.record.outcome === 'miss' && !missIsError(choice)) return;
       const flash = $('.trial__flash');
       flash.className = `trial__flash ${ok ? 'is-ok' : 'is-error'}`;
       window.setTimeout(() => (flash.className = 'trial__flash'), CONFIG.feedback.flashMs);
@@ -238,7 +243,9 @@ export function renderTrials(
       playerId: player.id,
       date: startDate.toISOString(),
       endDate: new Date().toISOString(),
-      mode: 'train',
+      mode: choice.mode,
+      level: choice.level,
+      responseLimitMs: T.responseMs,
       game: 'classique',
       status,
       batteryVersion: null,
@@ -275,6 +282,7 @@ export function renderTrials(
     const box = $('.trial__summary');
     box.innerHTML = `
       <h2>${session.status === 'completed' ? 'Série terminée' : 'Série interrompue'} — ${player.id}</h2>
+      <p class="trial__mode">${modeLabel(choice, CONFIG.modes)}</p>
       <dl>
         <dt>Essais</dt><dd>${s.trials}</dd>
         <dt>Réussites</dt><dd>${s.hits} (${pct(s.hitRate)})</dd>
@@ -282,7 +290,7 @@ export function renderTrials(
         <dt>Écart interquartile</dt><dd>${ms(s.rtIqr)}</dd>
         <dt>Temps de mouvement médian</dt><dd>${ms(s.mtMedian)}</dd>
         <dt>Anticipations</dt><dd>${s.anticipations} (${pct(s.anticipationRate)})</dd>
-        <dt>Mauvaise zone / sans réponse</dt><dd>${s.wrongZone} / ${s.misses}</dd>
+        <dt>Cible non atteinte à temps</dt><dd>${s.misses}</dd>
         <dt>Faux départs</dt><dd>${s.falseStarts}</dd>
         <dt>TR exclus (hors ${T.validRtMinMs}-${T.validRtMaxMs} ms)</dt><dd>${s.rtExcluded}</dd>
         <dt>Détection</dt><dd>${session.meanDetectionFps === null ? '—' : `${session.meanDetectionFps.toFixed(1)} i/s`}</dd>

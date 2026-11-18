@@ -443,3 +443,119 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Choix du mode ---------- */
+.modes {
+  margin-top: clamp(1.25rem, 4vh, 2.25rem);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.1rem;
+}
+
+.mode {
+  position: relative;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1.3rem 1.3rem 1.2rem;
+  border-radius: 20px;
+  border: 1px solid var(--brand-glass-line);
+  background: linear-gradient(170deg, var(--brand-glass-top), var(--brand-glass-bottom));
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--brand-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.mode:active {
+  border-color: var(--brand-yellow);
+}
+
+.mode--test {
+  border: 2px solid var(--brand-yellow);
+}
+
+.mode__kicker {
+  color: var(--brand-text-soft);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.mode__name {
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.mode__desc {
+  color: var(--brand-text-soft);
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.mode__time {
+  margin-top: auto;
+  font-weight: 700;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--brand-yellow);
+  font-variant-numeric: tabular-nums;
+}
+
+.mode__levels {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.3rem;
+}
+
+.mode__level {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--brand-glass-line);
+  background: var(--brand-glass-bottom);
+  color: var(--brand-text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.mode__level.is-on {
+  border-color: var(--brand-yellow);
+  background: var(--brand-yellow);
+  color: var(--brand-on-yellow);
+}
+
+.mode__go {
+  align-self: stretch;
+  margin-top: 0.6rem;
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-radius: 12px;
+  background: var(--brand-yellow);
+  color: var(--brand-on-yellow);
+  font: inherit;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.mode__go:active {
+  background: var(--brand-blue);
+}
+
+@media (max-width: 760px) {
+  .modes {
+    grid-template-columns: 1fr;
+  }
+}

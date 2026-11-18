@@ -517,7 +517,7 @@ export function renderCalibration(root: HTMLElement, initialPlayer: Player, a: C
       try {
         await a.save(record);
         saved = record;
-        saveBtn.textContent = 'Commencer : Classique';
+        saveBtn.textContent = 'Continuer ›';
         saveBtn.disabled = false;
         box.querySelector<HTMLButtonElement>('[data-action="redo"]')!.hidden = true;
       } catch (err) {

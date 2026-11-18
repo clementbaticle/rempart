@@ -10,6 +10,7 @@ import { renderLiveView } from './ui/liveView';
 import { renderPlayerForm } from './ui/playerForm';
 import { renderCalibration } from './ui/calibrationView';
 import { renderTrials } from './ui/trialView';
+import { renderModes } from './ui/modeView';
 import {
   addPlayer, getPlayer, latestCalibration, listPlayers, openDb, saveCalibration, saveSession, updatePlayer, listSessions, type Db,
 } from './storage/db';
@@ -90,10 +91,18 @@ async function showCalibration(db: Db, playerId: string): Promise<void> {
       onExit: () => void showHome(db),
       onStart: (record) =>
         go(() =>
-          renderTrials(root, player, record, {
-            save: (session, trials) => saveSession(db, session, trials),
-            onExit: () => void showHome(db),
-          }),
+          renderModes(
+            root,
+            player,
+            (choice) =>
+              go(() =>
+                renderTrials(root, player, record, choice, {
+                  save: (session, trials) => saveSession(db, session, trials),
+                  onExit: () => void showHome(db),
+                }),
+              ),
+            () => void showHome(db),
+          ),
         ),
     }),
   );

@@ -1,4 +1,5 @@
 /** Enregistrements de séance et d'essai (section 8). */
+import type { TimeMode } from '../trial/modes';
 import type { SessionSummary } from '../trial/outcome';
 import type { TrialParams, TrialRecord } from '../trial/trialMachine';
 
@@ -9,7 +10,12 @@ export interface SessionRecord {
   date: string;
   endDate: string;
   /** test (étape 4) ou entraînement. */
-  mode: 'test' | 'train';
+  /** Mode de temps (les séances antérieures à la v0.4 portent 'train'). */
+  mode: TimeMode | 'train';
+  /** Niveau d'entraînement, null hors entraînement. */
+  level: number | null;
+  /** Délai pour atteindre la cible appliqué à la série (ms ; plafond de sécurité en Découverte). */
+  responseLimitMs: number;
   game: 'classique';
   status: 'completed' | 'interrupted';
   batteryVersion: string | null;
